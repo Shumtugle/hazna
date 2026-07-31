@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Hazna</title>
+<style>
+  :root{
+    --u:30px; --w:58px;
+    --ivory:#F4EBD8; --beige:#E3D5B8; --beige-dk:#CDBC98;
+    --bronze:#8C6A3F; --bronze-lt:#B58F55; --bronze-dk:#5C4526;
+    --leather:#7A5636; --leather-lt:#9A7048; --leather-dk:#4E3521;
+    --ink:#3A2E1E;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;margin:0}
+  body{
+    color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;
+    display:flex;flex-direction:column;overflow:hidden;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background:
+      repeating-linear-gradient(90deg, rgba(140,106,63,.05) 0 1px, transparent 1px 3px),
+      radial-gradient(120% 70% at 50% 0%, var(--ivory) 0%, var(--beige) 62%, var(--beige-dk) 100%);
+  }
+
+  header{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    padding:9px 62px 9px 14px;color:var(--ivory);flex:0 0 auto;
+    background:linear-gradient(180deg, var(--bronze-lt), var(--bronze) 55%, var(--bronze-dk));
+    box-shadow:0 2px 8px rgba(60,40,15,.35);
+  }
+  .title{font-size:14px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;white-space:nowrap}
+  .stats{font-size:13px;letter-spacing:.02em;opacity:.9;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .stats b{font-weight:700}
+  #amulet{
+    position:fixed;top:calc(env(safe-area-inset-top) + 6px);right:9px;
+    width:46px;height:auto;z-index:40;cursor:pointer;
+    filter:drop-shadow(0 2px 5px rgba(40,26,8,.55));
+    transition:transform .18s ease;
+  }
+  #amulet:active{transform:scale(.92)}
+  #amulet.hidden{display:none}
+
+  main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:center;gap:12px;padding:6px}
+  .shelf{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:18px 12px;margin:0 auto}
+  .chests{display:flex;justify-content:center;align-items:flex-end;gap:30px}
+
+  .sack{position:relative;width:var(--w);cursor:pointer;padding-top:11px;
+        transition:transform .18s cubic-bezier(.4,1.4,.5,1)}
+  .sack.sel{transform:translateY(-20px)}
+  .cuff{
+    position:absolute;top:0;left:-5px;right:-5px;height:15px;border-radius:7px 7px 3px 3px;
+    background:linear-gradient(180deg, var(--leather-lt), var(--leather) 70%, var(--leather-dk));
+    box-shadow:0 1px 2px rgba(50,32,15,.4), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .cuff::after{
+    content:"";position:absolute;left:5px;right:5px;top:7px;height:2px;border-radius:2px;
+    background:linear-gradient(90deg, var(--bronze-lt), #E2C489, var(--bronze));
+    box-shadow:0 1px 1px rgba(0,0,0,.35);
+  }
+  .mouth{
+    position:relative;height:calc(var(--cap) * var(--u) + 8px);padding:4px 3px 6px;
+    border-left:5px solid var(--leather);border-right:5px solid var(--leather);
+    border-bottom:6px solid var(--leather-dk);
+    border-radius:2px 2px 26px 26px / 2px 2px 20px 20px;
+    background:linear-gradient(180deg, rgba(78,53,33,.55), rgba(78,53,33,.28) 22%, rgba(78,53,33,.5));
+    box-shadow:inset 0 3px 7px rgba(40,25,10,.6), 0 4px 8px rgba(80,58,28,.28);
+    display:flex;flex-direction:column-reverse;justify-content:flex-start;overflow:hidden;
+  }
+  .sack.sel .mouth{box-shadow:inset 0 3px 7px rgba(40,25,10,.6), 0 0 0 2px var(--bronze-lt), 0 10px 16px rgba(80,58,28,.35)}
+  .mouth::after{
+    content:"";position:absolute;inset:0;
+    background:linear-gradient(150deg, var(--leather-lt), var(--leather) 45%, var(--leather-dk));
+    clip-path:inset(0 0 100% 0);
+  }
+  .sack.sealed .mouth::after{clip-path:inset(0 0 0 0)}
+  .sack.sealing .mouth::after{animation:cover .34s ease-out both}
+  @keyframes cover{from{clip-path:inset(0 0 100% 0)} to{clip-path:inset(0 0 0 0)}}
+
+  .seal{
+    position:absolute;left:50%;top:36%;width:calc(var(--w) * .46);height:calc(var(--w) * .46);
+    margin-left:calc(var(--w) * -.23);
+    border-radius:50%;display:none;place-items:center;z-index:2;
+    background:radial-gradient(circle at 34% 30%, #D8B471, var(--bronze) 60%, var(--bronze-dk));
+    box-shadow:0 2px 4px rgba(50,32,15,.5), inset 0 0 0 1px rgba(255,255,255,.25);
+  }
+  .sack.sealed .seal{display:grid}
+  .sack.sealing .seal{animation:stamp .28s .22s cubic-bezier(.3,1.6,.5,1) both}
+  @keyframes stamp{from{transform:scale(2.2) rotate(-14deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1}}
+  .seal i{width:calc(var(--w) * .17);height:calc(var(--w) * .17);border-radius:50%;
+          background:var(--sc);box-shadow:inset 0 0 0 1px rgba(0,0,0,.4)}
+
+  .layer{height:var(--u);flex:0 0 var(--u);position:relative;display:flex;align-items:center;justify-content:center;gap:1px}
+  .gem{position:relative;display:block;background:var(--c);
+       box-shadow:inset 0 -2px 3px rgba(0,0,0,.45), inset 0 2px 2px rgba(255,255,255,.5), 0 1px 2px rgba(0,0,0,.4);
+       outline:1px solid rgba(35,20,5,.55);outline-offset:-1px}
+  .gem::after{content:"";position:absolute;left:16%;top:10%;width:30%;height:26%;border-radius:50%;
+              background:rgba(255,255,255,.72);filter:blur(.4px)}
+  .big{width:calc(var(--u) * .66);height:calc(var(--u) * .66)}
+  .sml{width:calc(var(--u) * .40);height:calc(var(--u) * .40);opacity:.94}
+
+  .g0{border-radius:50%}
+  .g1{border-radius:50% / 62%}
+  .g2{clip-path:polygon(50% 0,86% 50%,50% 100%,14% 50%)}
+  .g3{border-radius:52% 52% 50% 50% / 72% 72% 42% 42%;transform:rotate(180deg)}
+  .g4{clip-path:polygon(26% 0,74% 0,100% 26%,100% 74%,74% 100%,26% 100%,0 74%,0 26%)}
+  .g5{border-radius:50% 50% 34% 34% / 62% 62% 38% 38%}
+  .g6{border-radius:2px;height:calc(var(--u) * .46) !important}
+  .g6.sml{height:calc(var(--u) * .28) !important}
+  .g7{clip-path:polygon(50% 4%,96% 88%,4% 88%)}
+  .g8{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+  .g9{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+  .g10{clip-path:polygon(50% 2%,62% 36%,97% 36%,69% 58%,80% 94%,50% 72%,20% 94%,31% 58%,3% 36%,38% 36%)}
+  .g11{clip-path:polygon(36% 0,64% 0,64% 36%,100% 36%,100% 64%,64% 64%,64% 100%,36% 100%,36% 64%,0 64%,0 36%,36% 36%)}
+
+  .fly{position:fixed;width:20px;height:20px;pointer-events:none;z-index:9;
+       box-shadow:inset 0 -2px 3px rgba(0,0,0,.4), 0 2px 5px rgba(0,0,0,.35);outline:1px solid rgba(35,20,5,.5)}
+
+  footer{flex:0 0 auto;display:flex;gap:10px;justify-content:center;padding:10px 14px 16px;
+         flex-wrap:wrap;max-width:430px;margin:0 auto;width:100%}
+  button{
+    font:inherit;font-size:16px;font-weight:600;color:var(--ivory);
+    background:linear-gradient(180deg, var(--bronze-lt), var(--bronze));
+    border:1px solid var(--bronze-dk);border-radius:9px;padding:14px 18px;cursor:pointer;
+    box-shadow:0 2px 4px rgba(70,48,20,.3), inset 0 1px 0 rgba(255,255,255,.22);
+    transition:transform .1s, filter .15s;
+  }
+  footer button{flex:1 1 40%;min-width:calc(50% - 22px);max-width:200px}
+  button:active{transform:translateY(1px) scale(.98)}
+  button:disabled{opacity:.4;cursor:default}
+  button:focus-visible{outline:2px solid var(--bronze-dk);outline-offset:2px}
+
+  .veil{position:fixed;inset:0;background:rgba(60,44,22,.55);backdrop-filter:blur(3px);
+        display:flex;align-items:center;justify-content:center;padding:18px;z-index:10;
+        opacity:0;pointer-events:none;transition:opacity .25s;overflow:auto}
+  .veil.on{opacity:1;pointer-events:auto}
+  .card{
+    background:linear-gradient(180deg, var(--ivory), var(--beige));
+    border:2px solid var(--bronze);border-radius:6px;
+    box-shadow:0 12px 30px rgba(50,34,14,.45);
+    padding:26px 20px 18px;max-width:380px;width:100%;text-align:center;margin:auto;
+  }
+  .card h2{margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:.02em;color:var(--bronze-dk)}
+  .card .sub{margin:0 0 14px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;opacity:.55}
+  .card .quote{margin:0 0 16px;font-size:16.5px;line-height:1.5;font-style:italic;opacity:.88}
+  .card .count{margin:0 0 18px;font-size:12.5px;letter-spacing:.06em;opacity:.6;text-transform:uppercase}
+  .card .tale{margin:0 0 18px;font-size:14.5px;line-height:1.55;text-align:left}
+  .card .tale p{margin:0 0 9px}
+  .cover{width:100%;max-width:300px;border:2px solid var(--bronze);border-radius:4px;
+         display:block;margin:0 auto 14px;box-shadow:0 6px 16px rgba(50,34,14,.35)}
+
+  .splash{position:fixed;inset:0;z-index:20;background:#000;
+          display:flex;align-items:center;justify-content:center;
+          opacity:0;pointer-events:none;transition:opacity .4s}
+  .splash.on{opacity:1;pointer-events:auto}
+  .splash img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+  #splash .plate{
+    position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom) + 26px);
+    text-align:center;pointer-events:none;
+    text-shadow:0 2px 10px rgba(0,0,0,.9), 0 0 26px rgba(0,0,0,.75);
+  }
+  #splash .name{
+    font-size:38px;font-weight:800;letter-spacing:.30em;text-transform:uppercase;
+    color:#E7C88B;margin:0 0 6px;padding-left:.30em;
+  }
+  #splash .tag{font-size:12.5px;letter-spacing:.20em;text-transform:uppercase;color:#F4EBD8;opacity:.72;margin:0}
+  .card .row + button{width:100%}
+  .menugrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:2px 0 4px}
+  .menugrid button{min-width:0;width:100%;min-height:62px;padding:10px 8px;font-size:15px;
+                   display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.25}
+  .menugrid button small{display:block;font-size:11.5px;font-weight:600;opacity:.75;letter-spacing:.04em;margin-top:3px}
+  .doc{text-align:left;font-size:13.5px;line-height:1.55;margin:0 0 16px;max-height:56vh;overflow:auto}
+  .doc h3{margin:14px 0 4px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;font-weight:700}
+  .doc p{margin:0 0 7px}
+  .doc a{color:var(--bronze-dk);text-decoration:underline}
+  .doc .ver{opacity:.45;font-size:12px;margin-top:12px}
+  .flags{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+  .flags button{font-size:22px;padding:10px 0;min-width:0;background:rgba(140,106,63,.14);
+                border-color:rgba(92,69,38,.35);box-shadow:none}
+  .flags button.on{background:linear-gradient(180deg, var(--bronze-lt), var(--bronze));
+                   box-shadow:0 2px 4px rgba(70,48,20,.3)}
+  .row{display:flex;gap:10px;margin:0 0 12px}
+  .row button{flex:1;min-width:0}
+  .lbl{font-size:12px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;text-align:left;margin:0 0 7px}
+  .tally{font-size:13px;opacity:.66;text-align:left;line-height:1.6;margin:0 0 16px}
+  .about{font-size:12.5px;line-height:1.5;opacity:.55;text-align:left;margin:14px 0 0;
+         border-top:1px solid rgba(92,69,38,.25);padding-top:12px}
+
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.01ms !important;transition-duration:.01ms !important}}
+</style>
+</head>
+<body>
+
+<img id="amulet" src="amulet.png" alt="">
+
+<header>
+  <div class="title">Hazna</div>
+  <div class="stats"><span id="lvlLbl">audit</span> <b id="lvl">1</b> · <span id="mvLbl">moves</span> <b id="mv">0</b></div>
+</header>
+
+<main>
+  <div class="shelf" id="shelf"></div>
+  <div class="chests" id="chests"></div>
+</main>
+
+<footer>
+  <button id="undo">Undo</button>
+  <button id="reset">Restart</button>
+  <button id="hint">Hint</button>
+  <button id="auto">Solve</button>
+</footer>
+
+<div class="splash on" id="splash">
+  <img id="splashImg" src="cover.jpg" alt="">
+  <div class="plate">
+    <p class="name" id="splashName">HAZNA</p>
+    <p class="tag" id="splashTag"></p>
+  </div>
+</div>
+
+<div class="veil" id="menu">
+  <div class="card">
+    <h2>Hazna</h2>
+    <p class="sub" id="menuSub"></p>
+    <div class="tale" id="descText"></div>
+    <div class="menugrid">
+      <button id="playBtn"></button>
+      <button id="menuFresh"></button>
+      <button id="menuSound"></button>
+      <button id="menuLang"></button>
+    </div>
+    <p class="about" id="aboutMenu"></p>
+  </div>
+</div>
+
+<div class="splash" id="artSplash"><img id="artImg" src="" alt=""></div>
+
+<div class="veil" id="veil">
+  <div class="card">
+    <h2 id="veilTitle"></h2>
+    <p class="quote" id="veilQuote"></p>
+    <p class="count" id="veilCount"></p>
+    <button class="primary" id="next"></button>
+  </div>
+</div>
+
+<div class="veil" id="setup">
+  <div class="card">
+    <h2 id="setupTitle"></h2>
+    <p class="lbl" id="langLbl"></p>
+    <div class="flags" id="flags"></div>
+    <div class="menugrid">
+      <button id="soundBtn"></button>
+      <button id="freshBtn"></button>
+      <button id="aboutBtn"></button>
+      <button id="closeSetup"></button>
+    </div>
+    <p class="tally" id="tally"></p>
+  </div>
+</div>
+
+<div class="veil" id="about">
+  <div class="card">
+    <h2 id="aboutTitle"></h2>
+    <div class="doc" id="aboutBody"></div>
+    <button id="closeAbout"></button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ---------- языки ---------- */
+const LANGS = [
+  {code:"auto", flag:"🌐"}, {code:"en", flag:"🇬🇧"}, {code:"ru", flag:"🇷🇺"},
+  {code:"fi", flag:"🇫🇮"}, {code:"es", flag:"🇪🇸"}, {code:"ar", flag:"🇸🇦"},
+  {code:"sv", flag:"🇸🇪"}, {code:"fr", flag:"🇫🇷"}, {code:"ur", flag:"🇵🇰"},
+  {code:"zh", flag:"🇨🇳"}, {code:"de", flag:"🇩🇪"}, {code:"uk", flag:"🇺🇦"},
+  {code:"iw", flag:"🇮🇱"}, {code:"ky", flag:"🇰🇬"}, {code:"kk", flag:"🇰🇿"}
+];
+const RTL = ["ar","iw","ur"];
+
+const L = {};
+
+L.en = {
+  aboutBtn:"About",
+  sub:"The padishah's audit",
+  levelLbl:"audit", movesLbl:"moves",
+  undo:"Undo", reset:"Restart", hint:"Hint", solve:"Solve", stop:"Stop", rewinding:"Rewinding…",
+  noWay:"It doesn't add up",
+  sealed:"Chest sealed", royal:"The padishah remarked", next:"Next chest",
+  play:"Continue", playNew:"Begin the audit", fresh:"Start over", freshAsk:"Erase progress?",
+  settings:"Settings", sound:"Sound", on:"on", off:"off", language:"Language",
+  close:"Close", stats:"Chests sealed", total:"Moves in all",
+  about:"Code, design and logic fully generated by AI, with no human involvement. Model: Claude Opus 5.",
+  desc:[
+    "Padishah Murr ad-Din wished to know not the size of his wealth but its limits. The size was reported by scribes, and scribes lie in an orderly fashion.",
+    "The chests were opened: rubies under onyx, pearls among the spinels, a dent on the sapphires where someone had slept. He appointed you.",
+    "Each kind into its own sack, filled to the brim, drawstring pulled tight. Sacks differ in size because the stones do — as many places as there are stones.",
+    "The chest on the table cannot be sealed. It is where you set things down while counting, and by the end it must stand empty.",
+    "Stuck? Solve rewinds the moves to the last point where the treasury still added up, then shows the way on."
+  ]
+};
+
+L.ru = {
+  aboutBtn:"Об игре",
+  sub:"Ревизия ханских ларей",
+  levelLbl:"ревизия", movesLbl:"перекладываний",
+  undo:"Отменить", reset:"Заново", hint:"Подсказка", solve:"Решить", stop:"Стоп", rewinding:"Назад…",
+  noWay:"Счёт не сходится",
+  sealed:"Ларь опечатан", royal:"Падишах изволил заметить", next:"Следующий ларь",
+  play:"Продолжить", playNew:"Начать ревизию", fresh:"Начать сначала", freshAsk:"Стереть прогресс?",
+  settings:"Настройки", sound:"Звук", on:"вкл", off:"выкл", language:"Язык",
+  close:"Закрыть", stats:"Ларей опечатано", total:"Перекладываний всего",
+  about:"Код, дизайн и логика полностью сгенерированы ИИ, без участия человека. Модель: Claude Opus 5.",
+  desc:[
+    "Падишах Мурр ад-Дин пожелал узнать не размер своего богатства, а его границы. Размер ему называли писцы, а писцы врут упорядоченно.",
+    "Лари вскрыли: рубины под ониксом, жемчуг среди шпинели, на сапфирах вмятина от того, кто на них спал. Он назначил тебя.",
+    "Каждый вид в свой мешок, доверху, и затянуть шнурок. Мешки разного роста, потому что и камней разное число: сколько камней, столько мест.",
+    "Ларь на столе опечатать нельзя. Это место, куда ставят, пока считают, и к концу он должен опустеть.",
+    "Тупик? «Решить» отматывает ходы до последней развилки, где казна ещё сходилась, и ведёт дальше."
+  ]
+};
+
+L.de = {
+  aboutBtn:"Über das Spiel",
+  sub:"Die Prüfung des Padischahs",
+  levelLbl:"Prüfung", movesLbl:"Züge",
+  undo:"Zurück", reset:"Neu", hint:"Hinweis", solve:"Lösen", stop:"Stopp", rewinding:"Zurück…",
+  noWay:"Die Rechnung geht nicht auf",
+  sealed:"Truhe versiegelt", royal:"Der Padischah bemerkte", next:"Nächste Truhe",
+  play:"Fortsetzen", playNew:"Prüfung beginnen", fresh:"Von vorn", freshAsk:"Fortschritt löschen?",
+  settings:"Einstellungen", sound:"Ton", on:"an", off:"aus", language:"Sprache",
+  close:"Schließen", stats:"Truhen versiegelt", total:"Züge insgesamt",
+  about:"Code, Gestaltung und Logik vollständig von einer KI erzeugt, ohne menschliches Zutun. Modell: Claude Opus 5.",
+  desc:[
+    "Padischah Murr ad-Din wollte nicht die Größe seines Reichtums wissen, sondern dessen Grenzen. Die Größe nannten ihm die Schreiber, und Schreiber lügen geordnet.",
+    "Man öffnete die Truhen: Rubine unter Onyx, Perlen zwischen den Spinellen, auf den Saphiren eine Delle von jemandem, der darauf geschlafen hatte. Er ernannte dich.",
+    "Jede Art in ihren Sack, bis oben, die Schnur fest zugezogen. Die Säcke sind verschieden hoch, weil auch die Steine verschieden zahlreich sind: so viele Plätze wie Steine.",
+    "Die Truhe auf dem Tisch lässt sich nicht versiegeln. Dort stellt man ab, während man zählt, und am Ende muss sie leer sein.",
+    "Festgefahren? „Lösen“ spult bis zur letzten Stelle zurück, an der die Rechnung noch aufging, und zeigt den Weg weiter."
+  ]
+};
+
+L.fr = {
+  aboutBtn:"À propos",
+  sub:"L'audit du padischah",
+  levelLbl:"audit", movesLbl:"coups",
+  undo:"Annuler", reset:"Recommencer", hint:"Indice", solve:"Résoudre", stop:"Arrêt", rewinding:"Retour…",
+  noWay:"Le compte n'y est pas",
+  sealed:"Coffre scellé", royal:"Le padischah fit remarquer", next:"Coffre suivant",
+  play:"Continuer", playNew:"Commencer l'audit", fresh:"Repartir de zéro", freshAsk:"Effacer la progression ?",
+  settings:"Réglages", sound:"Son", on:"oui", off:"non", language:"Langue",
+  close:"Fermer", stats:"Coffres scellés", total:"Coups au total",
+  about:"Code, design et logique entièrement générés par une IA, sans intervention humaine. Modèle : Claude Opus 5.",
+  desc:[
+    "Le padischah Murr ad-Din voulut connaître non pas la taille de sa fortune, mais ses limites. La taille, les scribes la lui donnaient, et les scribes mentent avec méthode.",
+    "On ouvrit les coffres : rubis sous l'onyx, perles parmi les spinelles, une marque sur les saphirs laissée par qui y avait dormi. Il te nomma.",
+    "Chaque espèce dans son sac, jusqu'au bord, cordon bien serré. Les sacs sont de tailles diverses parce que les pierres le sont aussi : autant de places que de pierres.",
+    "Le coffre posé sur la table ne se scelle pas. C'est là qu'on dépose pendant qu'on compte, et à la fin il doit rester vide.",
+    "Bloqué ? « Résoudre » rembobine jusqu'au dernier point où le compte tombait juste, puis montre la suite."
+  ]
+};
+
+L.es = {
+  aboutBtn:"Acerca de",
+  sub:"La auditoría del padishah",
+  levelLbl:"auditoría", movesLbl:"movimientos",
+  undo:"Deshacer", reset:"Reiniciar", hint:"Pista", solve:"Resolver", stop:"Parar", rewinding:"Atrás…",
+  noWay:"Las cuentas no cuadran",
+  sealed:"Arca sellada", royal:"El padishah observó", next:"Siguiente arca",
+  play:"Continuar", playNew:"Comenzar la auditoría", fresh:"Empezar de nuevo", freshAsk:"¿Borrar el progreso?",
+  settings:"Ajustes", sound:"Sonido", on:"sí", off:"no", language:"Idioma",
+  close:"Cerrar", stats:"Arcas selladas", total:"Movimientos en total",
+  about:"Código, diseño y lógica generados enteramente por IA, sin intervención humana. Modelo: Claude Opus 5.",
+  desc:[
+    "El padishah Murr ad-Din quiso saber no el tamaño de su riqueza, sino sus límites. El tamaño se lo decían los escribas, y los escribas mienten con orden.",
+    "Se abrieron las arcas: rubíes bajo el ónice, perlas entre las espinelas, y en los zafiros la marca de quien durmió sobre ellos. Te nombró a ti.",
+    "Cada clase en su saco, hasta el borde, con el cordón bien apretado. Los sacos son de distinto tamaño porque las piedras también: tantos sitios como piedras.",
+    "El arca de la mesa no se puede sellar. Es donde se deja mientras se cuenta, y al final debe quedar vacía.",
+    "¿Atascado? «Resolver» rebobina hasta el último punto donde las cuentas aún cuadraban y muestra el camino."
+  ]
+};
+
+L.sv = {
+  aboutBtn:"Om spelet",
+  sub:"Padishahens revision",
+  levelLbl:"revision", movesLbl:"drag",
+  undo:"Ångra", reset:"Börja om", hint:"Ledtråd", solve:"Lös", stop:"Stopp", rewinding:"Tillbaka…",
+  noWay:"Det går inte ihop",
+  sealed:"Kistan förseglad", royal:"Padishahen anmärkte", next:"Nästa kista",
+  play:"Fortsätt", playNew:"Börja revisionen", fresh:"Börja från början", freshAsk:"Radera framstegen?",
+  settings:"Inställningar", sound:"Ljud", on:"på", off:"av", language:"Språk",
+  close:"Stäng", stats:"Kistor förseglade", total:"Drag totalt",
+  about:"Kod, formgivning och logik är helt genererade av AI, utan mänsklig medverkan. Modell: Claude Opus 5.",
+  desc:[
+    "Padishah Murr ad-Din ville inte veta hur stor hans rikedom var, utan var den tog slut. Storleken uppgavs av skrivarna, och skrivare ljuger ordentligt.",
+    "Kistorna öppnades: rubiner under onyx, pärlor bland spineller, och på safirerna ett märke efter någon som sovit där. Han utsåg dig.",
+    "Varje sort i sin egen påse, ända upp, och snöret hårt åtdraget. Påsarna är olika höga eftersom stenarna är olika många: lika många platser som stenar.",
+    "Kistan på bordet går inte att försegla. Där ställer man undan medan man räknar, och till slut ska den stå tom.",
+    "Kört fast? ”Lös” spolar tillbaka till sista punkten där räkningen fortfarande gick ihop och visar vägen vidare."
+  ]
+};
+
+L.fi = {
+  aboutBtn:"Tietoja",
+  sub:"Padishahin tilintarkastus",
+  levelLbl:"tarkastus", movesLbl:"siirtoa",
+  undo:"Kumoa", reset:"Alusta", hint:"Vihje", solve:"Ratkaise", stop:"Seis", rewinding:"Takaisin…",
+  noWay:"Tilit eivät täsmää",
+  sealed:"Arkku sinetöity", royal:"Padishah huomautti", next:"Seuraava arkku",
+  play:"Jatka", playNew:"Aloita tarkastus", fresh:"Aloita alusta", freshAsk:"Poistetaanko edistyminen?",
+  settings:"Asetukset", sound:"Ääni", on:"päällä", off:"pois", language:"Kieli",
+  close:"Sulje", stats:"Arkkuja sinetöity", total:"Siirtoja yhteensä",
+  about:"Koodi, ulkoasu ja logiikka on kokonaan tekoälyn tuottamia, ilman ihmisen osuutta. Malli: Claude Opus 5.",
+  desc:[
+    "Padishah Murr ad-Din halusi tietää rikkautensa rajat, ei sen määrää. Määrän kertoivat kirjurit, ja kirjurit valehtelevat järjestelmällisesti.",
+    "Arkut avattiin: rubiinit onyksin alla, helmet spinellien seassa, ja safiireissa painauma jonkun nukuttua niiden päällä. Hän nimitti sinut.",
+    "Jokainen laji omaan pussiinsa, täyteen asti, ja nyöri tiukalle. Pussit ovat eri kokoisia, koska kiviäkin on eri määrä: yhtä monta paikkaa kuin kiviä.",
+    "Pöydällä olevaa arkkua ei voi sinetöidä. Siihen asetetaan kivet laskemisen ajaksi, ja lopuksi sen on oltava tyhjä.",
+    "Jumissa? ”Ratkaise” kelaa siirrot viimeiseen kohtaan, jossa tilit vielä täsmäsivät, ja näyttää tien eteenpäin."
+  ]
+};
+
+L.uk = {
+  aboutBtn:"Про гру",
+  sub:"Ревізія ханських скринь",
+  levelLbl:"ревізія", movesLbl:"перекладань",
+  undo:"Скасувати", reset:"Спочатку", hint:"Підказка", solve:"Розв'язати", stop:"Стоп", rewinding:"Назад…",
+  noWay:"Рахунок не сходиться",
+  sealed:"Скриню опечатано", royal:"Падишах зволив зауважити", next:"Наступна скриня",
+  play:"Продовжити", playNew:"Розпочати ревізію", fresh:"Почати спочатку", freshAsk:"Стерти поступ?",
+  settings:"Налаштування", sound:"Звук", on:"увімк", off:"вимк", language:"Мова",
+  close:"Закрити", stats:"Скринь опечатано", total:"Перекладань усього",
+  about:"Код, дизайн і логіка повністю згенеровані ШІ, без участі людини. Модель: Claude Opus 5.",
+  desc:[
+    "Падишах Мурр ад-Дін забажав знати не розмір свого багатства, а його межі. Розмір йому називали писарі, а писарі брешуть упорядковано.",
+    "Скрині відкрили: рубіни під оніксом, перли серед шпінелі, на сапфірах вм'ятина від того, хто на них спав. Він призначив тебе.",
+    "Кожен вид у свій мішок, доверху, і затягнути шнурок. Мішки різного зросту, бо й каменів різна кількість: скільки каменів, стільки місць.",
+    "Скриню на столі опечатати не можна. Це місце, куди ставлять, поки лічать, і наприкінці вона має спорожніти.",
+    "Глухий кут? «Розв'язати» відмотує ходи до останньої розвилки, де рахунок ще сходився, і веде далі."
+  ]
+};
+L.ar = {
+  aboutBtn:"حول اللعبة",
+  sub:"تدقيق خزانة الباديشاه",
+  levelLbl:"تدقيق", movesLbl:"نقلة",
+  undo:"تراجع", reset:"من جديد", hint:"تلميح", solve:"حلّ", stop:"إيقاف", rewinding:"رجوع…",
+  noWay:"الحساب لا يستقيم",
+  sealed:"خُتم الصندوق", royal:"قال الباديشاه", next:"الصندوق التالي",
+  play:"متابعة", playNew:"ابدأ التدقيق", fresh:"البدء من جديد", freshAsk:"محو التقدّم؟",
+  settings:"الإعدادات", sound:"الصوت", on:"مُفعّل", off:"مُعطّل", language:"اللغة",
+  close:"إغلاق", stats:"صناديق مختومة", total:"مجموع النقلات",
+  about:"الشيفرة والتصميم والمنطق مولّدة بالكامل بالذكاء الاصطناعي، دون مشاركة بشرية. النموذج: Claude Opus 5.",
+  desc:[
+    "أراد الباديشاه مُرّ الدين أن يعرف حدود ثروته لا مقدارها. أمّا المقدار فيخبره به الكتبة، والكتبة يكذبون بانتظام.",
+    "فُتحت الصناديق: ياقوت تحت العقيق الأسود، ولؤلؤ بين الإسبينل، وعلى الياقوت الأزرق أثر من نام عليه. فعيّنك أنت.",
+    "كل نوع في كيسه، حتى الحافة، ثم يُشدّ الرباط. الأكياس مختلفة الحجم لأن الأحجار مختلفة العدد: من المواضع بقدر الأحجار.",
+    "الصندوق الذي على الطاولة لا يُختم. فيه توضع الأحجار أثناء العدّ، وفي النهاية يجب أن يبقى فارغًا.",
+    "تعثّرت؟ زر «حلّ» يعيد النقلات إلى آخر موضع كان الحساب فيه مستقيمًا، ثم يدلّك على الطريق."
+  ]
+};
+
+L.iw = {
+  aboutBtn:"אודות",
+  sub:"ביקורת אוצר הפאדישאה",
+  levelLbl:"ביקורת", movesLbl:"מהלכים",
+  undo:"בטל", reset:"מחדש", hint:"רמז", solve:"פתור", stop:"עצור", rewinding:"אחורה…",
+  noWay:"החשבון לא מסתדר",
+  sealed:"התיבה נחתמה", royal:"הפאדישאה העיר", next:"התיבה הבאה",
+  play:"המשך", playNew:"התחל ביקורת", fresh:"התחל מחדש", freshAsk:"למחוק את ההתקדמות?",
+  settings:"הגדרות", sound:"צליל", on:"פועל", off:"כבוי", language:"שפה",
+  close:"סגור", stats:"תיבות שנחתמו", total:"סך המהלכים",
+  about:"הקוד, העיצוב וההיגיון נוצרו כולם על ידי בינה מלאכותית, ללא מעורבות אדם. דגם: Claude Opus 5.",
+  desc:[
+    "הפאדישאה מור א-דין ביקש לדעת לא את גודל עושרו אלא את גבולותיו. את הגודל מסרו לו הלבלרים, והלבלרים משקרים בסדר מופתי.",
+    "התיבות נפתחו: אודם מתחת לשוהם, פנינים בין הספינלים, ועל הספירים שקע של מי שישן עליהם. אז מינה אותך.",
+    "כל מין לשקו שלו, עד הסוף, והחוט נמשך היטב. השקים שונים בגודלם משום שגם האבנים שונות במספרן: מקומות כמספר האבנים.",
+    "את התיבה שעל השולחן אי אפשר לחתום. שם מניחים בזמן הספירה, ובסוף עליה לעמוד ריקה.",
+    "נתקעת? «פתור» מחזיר את המהלכים לנקודה האחרונה שבה החשבון עוד הסתדר, ומראה את ההמשך."
+  ]
+};
+
+L.ur = {
+  aboutBtn:"تعارف",
+  sub:"بادشاہ کے خزانے کی جانچ",
+  levelLbl:"جانچ", movesLbl:"چالیں",
+  undo:"واپس", reset:"دوبارہ", hint:"اشارہ", solve:"حل کریں", stop:"رکیں", rewinding:"پیچھے…",
+  noWay:"حساب پورا نہیں ہوتا",
+  sealed:"صندوق مہر بند", royal:"بادشاہ نے فرمایا", next:"اگلا صندوق",
+  play:"جاری رکھیں", playNew:"جانچ شروع کریں", fresh:"نئے سرے سے", freshAsk:"پیش رفت مٹا دیں؟",
+  settings:"ترتیبات", sound:"آواز", on:"چالو", off:"بند", language:"زبان",
+  close:"بند کریں", stats:"مہر بند صندوق", total:"کل چالیں",
+  about:"کوڈ، ڈیزائن اور منطق مکمل طور پر مصنوعی ذہانت نے بنائے، انسان کی شرکت کے بغیر۔ ماڈل: Claude Opus 5.",
+  desc:[
+    "بادشاہ مر الدین اپنی دولت کی مقدار نہیں، اس کی حدیں جاننا چاہتا تھا۔ مقدار تو منشی بتاتے تھے، اور منشی ترتیب سے جھوٹ بولتے ہیں۔",
+    "صندوق کھولے گئے: عقیقِ سیاہ کے نیچے یاقوت، اسپنل کے بیچ موتی، اور نیلم پر اُس کا نشان جو ان پر سویا تھا۔ تب اُس نے تمہیں مقرر کیا۔",
+    "ہر قسم اپنی تھیلی میں، اوپر تک، اور ڈوری کَس دو۔ تھیلیاں مختلف ہیں کیونکہ پتھروں کی تعداد بھی مختلف ہے: جتنے پتھر، اتنی جگہیں۔",
+    "میز پر رکھے صندوق پر مہر نہیں لگتی۔ وہ گنتی کے دوران رکھنے کی جگہ ہے، اور آخر میں خالی ہونا چاہیے۔",
+    "پھنس گئے؟ «حل کریں» چالوں کو اُس آخری مقام تک لوٹاتا ہے جہاں حساب ابھی پورا تھا، پھر آگے کا راستہ دکھاتا ہے۔"
+  ]
+};
+
+L.kk = {
+  aboutBtn:"Ойын туралы",
+  sub:"Падишах қазынасының тексерісі",
+  levelLbl:"тексеріс", movesLbl:"жүріс",
+  undo:"Болдырмау", reset:"Қайтадан", hint:"Кеңес", solve:"Шешу", stop:"Тоқта", rewinding:"Кері…",
+  noWay:"Есеп шықпайды",
+  sealed:"Сандық мөрленді", royal:"Падишах айтты", next:"Келесі сандық",
+  play:"Жалғастыру", playNew:"Тексерісті бастау", fresh:"Басынан бастау", freshAsk:"Барысты өшіру керек пе?",
+  settings:"Баптаулар", sound:"Дыбыс", on:"қосулы", off:"өшірулі", language:"Тіл",
+  close:"Жабу", stats:"Мөрленген сандық", total:"Барлық жүріс",
+  about:"Код, дизайн және логика толығымен жасанды интеллект арқылы жасалған, адам қатыспаған. Үлгі: Claude Opus 5.",
+  desc:[
+    "Падишах Мұрр ад-Дин байлығының мөлшерін емес, шегін білгісі келді. Мөлшерді оған хатшылар айтатын, ал хатшылар ретімен өтірік айтады.",
+    "Сандықтар ашылды: лағыл оникстің астында, інжу шпинельдің арасында, сапфирде біреудің ұйықтағанынан қалған ойық. Сонда ол сені тағайындады.",
+    "Әр түрін өз қалтасына, аузына дейін, бауын тартып байла. Қалталар әртүрлі, себебі тастардың саны да әртүрлі: неше тас болса, сонша орын.",
+    "Үстелдегі сандықты мөрлеуге болмайды. Ол — санап жатқанда қоятын орын, ақырында бос тұруы тиіс.",
+    "Тығырыққа тірелдің бе? «Шешу» жүрістерді есеп әлі шығып тұрған соңғы сәтке қайтарып, жолды көрсетеді."
+  ]
+};
+
+L.ky = {
+  aboutBtn:"Оюн жөнүндө",
+  sub:"Падыша казынасынын текшерүүсү",
+  levelLbl:"текшерүү", movesLbl:"жүрүш",
+  undo:"Артка", reset:"Кайрадан", hint:"Кеңеш", solve:"Чечүү", stop:"Токто", rewinding:"Артка…",
+  noWay:"Эсеп чыкпайт",
+  sealed:"Сандык мөөрлөндү", royal:"Падыша айтты", next:"Кийинки сандык",
+  play:"Улантуу", playNew:"Текшерүүнү баштоо", fresh:"Башынан баштоо", freshAsk:"Жетишкендикти өчүрөбүзбү?",
+  settings:"Жөндөөлөр", sound:"Үн", on:"күйүк", off:"өчүк", language:"Тил",
+  close:"Жабуу", stats:"Мөөрлөнгөн сандык", total:"Бардык жүрүш",
+  about:"Код, дизайн жана логика толугу менен жасалма интеллект тарабынан жаралган, адамдын катышуусусуз. Модель: Claude Opus 5.",
+  desc:[
+    "Падыша Мурр ад-Дин байлыгынын өлчөмүн эмес, чегин билгиси келди. Өлчөмдү ага катчылар айтчу, ал эми катчылар тартип менен калп айтышат.",
+    "Сандыктар ачылды: лаал оникстин астында, бермет шпинелдин арасында, сапфирде бирөө уктап кеткен изи. Ошондо ал сени дайындады.",
+    "Ар бир түрүн өз баштыгына, оозуна чейин, боосун тартып байла. Баштыктар ар кандай, анткени таштардын саны да ар кандай: канча таш болсо, ошончо орун.",
+    "Үстөлдөгү сандыкты мөөрлөөгө болбойт. Ал — санап жатканда коё туруучу жер, аягында бош калышы керек.",
+    "Туюкка кабылдыңбы? «Чечүү» жүрүштөрдү эсеп дагы эле чыгып турган акыркы жерге кайтарып, жолду көрсөтөт."
+  ]
+};
+
+L.zh = {
+  aboutBtn:"关于",
+  sub:"帕迪沙的清点",
+  levelLbl:"清点", movesLbl:"步",
+  undo:"撤销", reset:"重来", hint:"提示", solve:"求解", stop:"停止", rewinding:"回退…",
+  noWay:"账目对不上",
+  sealed:"箱已封缄", royal:"帕迪沙说道", next:"下一箱",
+  play:"继续", playNew:"开始清点", fresh:"从头开始", freshAsk:"清除进度？",
+  settings:"设置", sound:"声音", on:"开", off:"关", language:"语言",
+  close:"关闭", stats:"已封缄的箱", total:"总步数",
+  about:"代码、设计与逻辑均由人工智能生成，无人参与。模型：Claude Opus 5。",
+  desc:[
+    "帕迪沙穆尔·阿德丁想知道的不是财富的多少，而是它的边界。多少自有书吏禀报，而书吏说谎向来井井有条。",
+    "箱子打开了：红宝石压在缟玛瑙下，珍珠混进了尖晶石，蓝宝石上还留着谁睡出来的凹痕。于是他任命了你。",
+    "每一种归入自己的袋子，装到袋口，把绳抽紧。袋子高矮不一，因为石头多寡不一：有多少石头，就有多少位置。",
+    "桌上的箱子封不了缄。那是清点时临时搁置之处，到最后必须空着。",
+    "走进死局？点「求解」会把棋步倒回账目仍然对得上的最后一处，再往下指路。"
+  ]
+};
+/* ---------- описание игры ----------
+   Не перевод, а один и тот же рассказ, сказанный на четырнадцати языках. */
+
+const DESC = {
+
+en: [
+"Wealth that does not know its own edges is blind. Padishah Murr ad-Din put no faith in the calligraphy of his scribes: paper endures any lie, provided the lie is tidy. He wanted the limit, not the sum — something a paw could rest on.",
+"The seals were broken. Eleven years of disorder spilled out of the dark: ruby pressed under the dull weight of onyx, pearl rubbed raw among spinel, and on the sapphires a hollow left by whoever had slept there while the realm was called rich. Drawing the border of all this splendour falls to you.",
+"The matter itself sets the rules. Every sack is cut to the count of its own kind — no slack, no crowding. Like to like, filled to the brim, drawstring pulled tight. The chest in the middle of the table is a purgatory: it takes in what has no place yet, but it wears no seal, and by the last knot it must stand empty.",
+"The mercy of this puzzle is its memory. If the count locks into a dead knot, time can be broken open. The game does not rewrite the game from the start; it winds back to the fork where your move was still sound, and from that point carries the audit through, coldly and without error."
+],
+
+ru: [
+"Богатство, не знающее своих границ, слепо. Падишах Мурр ад-Дин не поверил каллиграфии писцов: бумага стерпит любую ложь, если ложь опрятна. Ему нужна была не сумма, а предел — то, на что можно положить лапу.",
+"Печати сорвали. Из темноты вывалилось одиннадцать лет беспорядка: рубин под глухим весом оникса, жемчуг, затёртый шпинелью, и на сапфирах ложбина от того, кто спал на них, пока держава считалась богатой. Назначить границу этому великолепию выпало тебе.",
+"Правила диктует сама материя. Мешок скроен по числу камней своей породы: ни пустоты, ни тесноты. Родственное к родственному, доверху, и шнур затянуть. Ларь посреди стола — чистилище: он принимает то, чему пока нет места, но печати не носит и к последнему узлу обязан стоять пустым.",
+"Милосердие этой головоломки — в памяти. Если счёт сойдётся в мёртвый узел, время можно надломить. Игра не переписывает партию с начала: она отматывает до развилки, где твой ход ещё был верен, и оттуда доводит ревизию до конца — холодно и без ошибки."
+],
+
+de: [
+"Reichtum, der seine Grenzen nicht kennt, ist blind. Padischah Murr ad-Din traute der Kalligraphie seiner Schreiber nicht: Papier erträgt jede Lüge, sofern sie ordentlich ist. Er wollte nicht die Summe, sondern die Grenze — etwas, worauf sich eine Pfote legen lässt.",
+"Die Siegel wurden aufgebrochen. Elf Jahre Unordnung fielen aus dem Dunkel: Rubin unter dem dumpfen Gewicht des Onyx, Perlen wundgerieben zwischen Spinellen, und auf den Saphiren eine Mulde von dem, der darauf schlief, während das Reich als reich galt. Diesem Glanz eine Grenze zu ziehen, fällt dir zu.",
+"Die Regeln gibt der Stoff selbst. Jeder Sack ist nach der Zahl seiner Art geschnitten: kein leerer Platz, keine Enge. Gleiches zu Gleichem, bis oben, die Schnur fest zugezogen. Die Truhe in der Mitte ist ein Fegefeuer: sie nimmt auf, was noch keinen Platz hat, doch sie trägt kein Siegel und muss beim letzten Knoten leer dastehen.",
+"Die Gnade dieses Rätsels liegt in seinem Gedächtnis. Verknotet sich die Rechnung tödlich, lässt sich die Zeit aufbrechen. Das Spiel schreibt die Partie nicht neu; es spult zurück bis zur Gabelung, an der dein Zug noch richtig war, und führt die Prüfung von dort zu Ende, kühl und fehlerlos."
+],
+
+fr: [
+"Une richesse qui ignore ses bords est aveugle. Le padischah Murr ad-Din ne crut pas la calligraphie de ses scribes : le papier supporte tous les mensonges, pourvu qu'ils soient bien rangés. Il voulait la limite, non la somme — quelque chose où poser la patte.",
+"On brisa les sceaux. Onze ans de désordre tombèrent de l'obscurité : le rubis sous le poids sourd de l'onyx, la perle usée parmi les spinelles, et sur les saphirs le creux laissé par celui qui y dormait pendant qu'on disait l'empire riche. Tracer la bordure de cette splendeur te revient.",
+"C'est la matière qui dicte les règles. Chaque sac est taillé au nombre de sa propre espèce : ni vide, ni presse. Le semblable au semblable, jusqu'au bord, cordon bien serré. Le coffre au milieu de la table est un purgatoire : il accueille ce qui n'a pas encore de place, mais il ne porte pas de sceau, et au dernier nœud il doit rester vide.",
+"La clémence de cette énigme tient à sa mémoire. Si le compte se noue à mort, on peut fendre le temps. Le jeu ne réécrit pas la partie depuis le début : il rembobine jusqu'à la bifurcation où ton coup était encore juste, et de là mène l'audit à son terme, froidement et sans faute."
+],
+
+es: [
+"La riqueza que ignora sus bordes es ciega. El padishah Murr ad-Din no creyó en la caligrafía de sus escribas: el papel soporta cualquier mentira, con tal de que esté ordenada. Quería el límite, no la suma; algo sobre lo que apoyar la zarpa.",
+"Rompieron los sellos. Once años de desorden cayeron de la oscuridad: rubí bajo el peso sordo del ónice, perla desgastada entre espinelas, y en los zafiros el hueco de quien durmió allí mientras al reino lo llamaban rico. Ponerle borde a ese esplendor te toca a ti.",
+"Las reglas las dicta la materia. Cada saco está cortado al número de su propia especie: ni vacío de más, ni estrechez. Lo semejante con lo semejante, hasta el borde, y el cordón bien apretado. El arca en mitad de la mesa es un purgatorio: acoge lo que aún no tiene sitio, pero no lleva sello, y al último nudo ha de quedar vacía.",
+"La clemencia de este juego está en su memoria. Si la cuenta se anuda de muerte, el tiempo puede quebrarse. No reescribe la partida desde el principio: rebobina hasta la bifurcación donde tu jugada aún era buena y desde allí lleva la auditoría hasta el final, con frialdad y sin error."
+],
+
+sv: [
+"Rikedom som inte känner sina kanter är blind. Padishah Murr ad-Din trodde inte på skrivarnas kalligrafi: papper tål vilken lögn som helst, bara den är prydlig. Han ville ha gränsen, inte summan — något att lägga tassen på.",
+"Sigillen bröts. Elva år av oordning föll ut ur mörkret: rubin under onyxens dova tyngd, pärlor nötta bland speneller, och på safirerna en grop efter den som sov där medan riket kallades rikt. Att dra gränsen kring all denna prakt faller på dig.",
+"Reglerna ges av materialet självt. Varje påse är skuren efter antalet av sin egen sort: ingen glapp, ingen trängsel. Lika till lika, ända upp, och snöret hårt åtdraget. Kistan mitt på bordet är en skärseld: den tar emot det som ännu saknar plats, men bär inget sigill, och vid sista knuten ska den stå tom.",
+"Barmhärtigheten i den här gåtan ligger i dess minne. Knyter sig räkningen dödligt kan tiden brytas upp. Spelet skriver inte om partiet från början; det spolar tillbaka till gaffeln där ditt drag ännu höll, och för därifrån revisionen i mål, kallt och utan fel."
+],
+
+fi: [
+"Rikkaus, joka ei tunne rajojaan, on sokea. Padishah Murr ad-Din ei uskonut kirjuriensa kaunokirjoitusta: paperi kestää minkä tahansa valheen, kunhan se on siisti. Hän halusi rajan eikä summaa — jotain, jolle voi laskea tassun.",
+"Sinetit murrettiin. Yksitoista vuotta epäjärjestystä valui pimeästä: rubiini onyksin kumean painon alla, helmi hankautuneena spinellien seassa, ja safiireissa kuoppa siitä, joka nukkui niiden päällä sillä aikaa kun valtakuntaa sanottiin rikkaaksi. Rajan vetäminen tälle loistolle jää sinulle.",
+"Säännöt sanelee aine itse. Jokainen pussi on leikattu oman lajinsa lukumäärän mukaan: ei väljyyttä, ei ahtautta. Samanlainen samanlaisen luo, täyteen asti, ja nyöri tiukalle. Pöydän keskellä oleva arkku on kiirastuli: se ottaa vastaan sen, jolla ei vielä ole paikkaa, mutta sinettiä se ei kanna, ja viimeisen solmun kohdalla sen on seisottava tyhjänä.",
+"Tämän pulman armo on sen muistissa. Jos laskelma kiristyy kuolleeksi solmuksi, ajan voi murtaa. Peli ei kirjoita erää alusta uusiksi: se kelaa siihen haaraan, jossa siirtosi oli vielä oikea, ja vie tarkastuksen sieltä loppuun, kylmästi ja virheettä."
+],
+
+uk: [
+"Багатство, що не знає своїх меж, сліпе. Падишах Мурр ад-Дін не повірив каліграфії писарів: папір стерпить будь-яку брехню, аби вона була охайна. Йому потрібна була не сума, а межа — те, на що можна покласти лапу.",
+"Печаті зірвали. З темряви випало одинадцять років безладу: рубін під глухою вагою оніксу, перли, затерті шпінеллю, і на сапфірах улоговина від того, хто спав на них, поки державу звали багатою. Провести межу цій пишноті випало тобі.",
+"Правила диктує сама матерія. Мішок скроєно за числом каменів своєї породи: ні порожнечі, ні тісноти. Споріднене до спорідненого, доверху, і шнур затягнути. Скриня посеред столу — чистилище: вона приймає те, чому ще немає місця, але печатки не носить і до останнього вузла має стояти порожньою.",
+"Милосердя цієї головоломки — у пам'яті. Якщо рахунок зійдеться в мертвий вузол, час можна надламати. Гра не переписує партію з початку: вона відмотує до розвилки, де твій хід іще був вірний, і звідти доводить ревізію до кінця — холодно й безпомилково."
+],
+
+ar: [
+"الثروة التي لا تعرف حدودها عمياء. لم يصدّق الباديشاه مُرّ الدين خطّ كتبته: الورق يحتمل كل كذبة ما دامت مرتّبة. أراد الحدّ لا المقدار، شيئًا يمكن أن تستقرّ عليه الكفّ.",
+"كُسرت الأختام. فانسكب من الظلام إحدى عشرة سنة من الفوضى: ياقوت تحت ثقل العقيق الأخرس، ولؤلؤ انسحق بين الإسبينل، وفي الياقوت الأزرق حفرة تركها من نام عليه بينما كانت المملكة تُدعى غنية. ورسم حدّ هذا البهاء صار إليك.",
+"المادة نفسها تضع القواعد. كل كيس مفصّل على عدد نوعه: لا فراغ ولا ازدحام. الشبيه إلى شبيهه، حتى الحافة، ثم يُشدّ الرباط. أما الصندوق في وسط الطاولة فمَطهر: يقبل ما لا مكان له بعد، لكنه لا يحمل ختمًا، وعند العقدة الأخيرة يجب أن يبقى فارغًا.",
+"رحمة هذا اللغز في ذاكرته. إذا انعقد الحساب عقدة ميتة أمكن كسر الزمن. اللعبة لا تعيد كتابة الدور من أوله، بل تعود إلى المفترق الذي كانت نقلتك فيه سليمة، ومن هناك تُتمّ التدقيق ببرود ودون خطأ."
+],
+
+iw: [
+"עושר שאינו יודע את גבולותיו הוא עיוור. הפאדישאה מור א-דין לא האמין לכתב היד של לבלריו: הנייר סובל כל שקר, ובלבד שיהיה מסודר. הוא רצה את הגבול, לא את הסכום — משהו שאפשר להניח עליו כף.",
+"החותמות נפרצו. אחת עשרה שנות אי-סדר נשפכו מן החושך: אודם תחת משקלו האטום של השוהם, פנינה שנשחקה בין הספינלים, ובספירים גומה של מי שישן עליהם בעוד הממלכה נקראת עשירה. לשרטט גבול להוד הזה נפל עליך.",
+"את הכללים מכתיב החומר עצמו. כל שק נגזר לפי מניין מינו: לא רווח ולא צפיפות. דומה אל דומה, עד הסוף, והחוט נמשך היטב. התיבה שבמרכז השולחן היא כור מצרף: היא קולטת את מה שאין לו עדיין מקום, אך אינה נושאת חותם, ובקשר האחרון עליה לעמוד ריקה.",
+"החסד שבחידה הזאת הוא זיכרונה. אם החשבון נקשר בקשר מת, אפשר לשבור את הזמן. המשחק אינו כותב את המערכה מחדש: הוא חוזר עד לפיצול שבו המהלך שלך עוד היה נכון, ומשם מוליך את הביקורת עד סופה, בקור רוח ובלי טעות."
+],
+
+ur: [
+"وہ دولت جو اپنی حدیں نہیں جانتی، اندھی ہے۔ بادشاہ مر الدین نے اپنے منشیوں کی خوشنویسی پر یقین نہ کیا: کاغذ ہر جھوٹ سہہ لیتا ہے، بشرطیکہ جھوٹ سلیقے سے ہو۔ اُسے مقدار نہیں، حد چاہیے تھی — ایسی چیز جس پر پنجہ رکھا جا سکے۔",
+"مہریں توڑی گئیں۔ اندھیرے سے گیارہ برس کی بے ترتیبی نکل پڑی: عقیقِ سیاہ کے بھاری بوجھ تلے یاقوت، اسپنل کے بیچ رگڑا ہوا موتی، اور نیلم پر اُس کا گڑھا جو اُن پر سوتا رہا جب سلطنت کو امیر کہا جاتا تھا۔ اِس شان کی حد کھینچنا اب تمہارے ذمے ہے۔",
+"قاعدے خود مادّہ طے کرتا ہے۔ ہر تھیلی اپنی قسم کی گنتی کے مطابق کاٹی گئی ہے: نہ خالی جگہ، نہ تنگی۔ ہم جنس ہم جنس کے ساتھ، اوپر تک، اور ڈوری کَس دو۔ میز کے بیچ رکھا صندوق برزخ ہے: جس چیز کی ابھی جگہ نہیں، اُسے سنبھال لیتا ہے، مگر مہر نہیں اٹھاتا، اور آخری گرہ تک اُسے خالی کھڑا ہونا ہے۔",
+"اِس معمّے کا رحم اُس کی یادداشت میں ہے۔ اگر حساب مردہ گرہ بن جائے تو وقت کو توڑا جا سکتا ہے۔ کھیل بازی کو سرے سے نہیں لکھتا: وہ اُس موڑ تک واپس لے جاتا ہے جہاں تمہاری چال ابھی درست تھی، اور وہیں سے جانچ کو ٹھنڈے دل اور بغیر غلطی کے انجام تک پہنچاتا ہے۔"
+],
+
+kk: [
+"Шегін білмейтін байлық — соқыр байлық. Падишах Мұрр ад-Дин хатшыларының әдемі жазуына сенбеді: қағаз кез келген өтірікті көтереді, тек ол ұқыпты болса болғаны. Оған мөлшер емес, шек керек еді — алақан қоятын нәрсе.",
+"Мөрлер бұзылды. Қараңғыдан он бір жылдық ретсіздік төгілді: оникстің тұйық салмағы астындағы лағыл, шпинельдің арасында мұқалған інжу, ал сапфирлерде — патшалық бай саналып тұрғанда солардың үстінде ұйықтаған біреудің ойығы. Осы салтанатқа шек қоюды саған тапсырды.",
+"Ережені материяның өзі айтады. Әр қалта өз тұқымының санына шақ пішілген: артық орын да, қысылу да жоқ. Тектесті тектеске, аузына дейін, бауын тартып байла. Үстелдің ортасындағы сандық — аралық орын: әзірге орны жоқ нәрсені қабылдайды, бірақ мөр көтермейді, ал соңғы түйін түйілгенде бос тұруға тиіс.",
+"Бұл жұмбақтың мейірімі — жадында. Есеп өлі түйінге айналса, уақытты сындыруға болады. Ойын партияны басынан жазбайды: жүрісің әлі дұрыс болған айырыққа шегінеді де, тексерісті сол жерден суық қандылықпен, қатесіз аяқтайды."
+],
+
+ky: [
+"Чегин билбеген байлык — сокур байлык. Падыша Мурр ад-Дин катчыларынын кооз жазуусуна ишенген жок: кагаз кандай гана калпты болбосун көтөрөт, эгер ал тыкан болсо. Ага өлчөм эмес, чек керек эле — алаканын коё турган нерсе.",
+"Мөөрлөр сынды. Караңгыдан он бир жылдык баш аламандык төгүлдү: оникстин дүлөй салмагы астындагы лаал, шпинелдин арасында жышылган бермет, ал эми сапфирлерде — мамлекет бай деп аталып турганда алардын үстүндө уктаган бирөөнүн изи. Ушул салтанатка чек коюу сага тийди.",
+"Эрежени материянын өзү айтат. Ар бир баштык өз тукумунун санына так жаратылган: ашыкча орун да, кысылуу да жок. Тектешти тектешке, оозуна чейин, боосун тартып байла. Үстөлдүн ортосундагы сандык — аралык жай: азырынча орду жок нерсени кабыл алат, бирок мөөр көтөрбөйт, акыркы түйүн түйүлгөндө бош турушу керек.",
+"Бул табышмактын ырайымы — эсинде. Эсеп өлүү түйүнгө айланса, убакытты сындырууга болот. Оюн партияны башынан жазбайт: жүрүшүң дагы эле туура болгон айрылышка кайтат да, текшерүүнү ошол жерден муздак кандуулук менен, катасыз аяктайт."
+],
+
+zh: [
+"不知边界的财富是盲目的。帕迪沙穆尔·阿德丁不信书吏的漂亮字迹：只要谎撒得整齐，纸张什么都受得住。他要的不是总数，而是边界——一处可以按下爪子的地方。",
+"封缄被撬开。十一年的失序从黑暗里倾出：红宝石压在缟玛瑙沉闷的分量之下，珍珠在尖晶石间磨得发涩，蓝宝石上还留着一处凹陷——当王国被称作富庶时，有谁一直睡在上面。为这份华美划出边界的事，落到了你头上。",
+"规矩由材料自己定下。每只袋子按本族石头的数目裁成：不多一分空，不少一分位。同类归同类，装到袋口，把绳抽紧。桌子中央那只箱子是炼狱：它收容暂时无处安放之物，却不佩封印，等最后一道结打好时，它必须空着。",
+"这道谜题的慈悲在于它的记忆。若账目绞成死结，时间是可以掰开的。它不会把这一局从头重写，而是倒回你最后一步仍然正确的岔口，再从那里把清点冷静无误地做完。"
+]
+
+};
+
+for (const code in DESC) if (L[code]) L[code].desc = DESC[code];
+/* ---------- подробное описание (как у Meno): разделы, ссылки, версия ---------- */
+const VERSION = "1.0.0";
+
+const DOC = {
+
+en: {
+  title: "About Hazna",
+  body: `<p>A sorting puzzle in a treasury. Each kind of gem goes into its own sack, filled to the brim, drawstring pulled tight. Code, design and logic fully generated by AI, with no human involvement.</p>
+
+<h3>Under the hood</h3>
+<p>Levels: dealt by unwinding a sealed treasury with reversible moves, so every deal is solvable by construction — no unwinnable boards.</p>
+<p>Hint and Solve: a priority search with an estimate of the work left. In a dead end it rewinds to the last position where the treasury still added up, then plays on.</p>
+<p>Sound: synthesised on the fly by the Web Audio API. No audio files.</p>
+<p>Progress: level, chests sealed and total moves are kept on the device. The board itself is not saved.</p>
+
+<h3>Screens</h3>
+<p>Tap a sack to lift it, tap another to pour. A sealed sack cannot be opened.</p>
+<p>The amulet in the corner opens settings from any screen, splash included.</p>
+<p>Every tenth audit: a remark from the padishah. Every thirtieth: a painting, five seconds, tap to skip.</p>
+
+<h3>Access</h3>
+<p>No internet, no permissions, no accounts, no ads, no tracking. The game runs offline in full.</p>
+
+<h3>Sources</h3>
+<p>Logic and code: <a href="https://claude.ai">claude.ai</a> — Claude Opus 5<br>
+Illustrations: <a href="https://chatgpt.com">chatgpt.com</a><br>
+Source: <a href="https://github.com/Shumtugle/hazna">github.com/Shumtugle/hazna</a></p>
+<p class="ver">generated by AI · Claude Opus 5 · v${VERSION}</p>`
+},
+
+ru: {
+  title: "Об игре",
+  body: `<p>Головоломка-сортировка в сокровищнице. Каждый вид камней — в свой мешок, доверху, и шнур затянуть. Код, дизайн и логика полностью сгенерированы ИИ, без участия человека.</p>
+
+<h3>Под капотом</h3>
+<p>Уровни: раздача строится разбором опечатанной казны обратимыми ходами, поэтому решаема по построению — нерешаемых раскладов не бывает.</p>
+<p>Подсказка и «Решить»: поиск по приоритету с оценкой остатка работы. В тупике отматывает до последней позиции, где казна ещё сходилась, и ведёт дальше.</p>
+<p>Звук: синтезируется на лету через Web Audio API. Звуковых файлов нет.</p>
+<p>Прогресс: ревизия, число опечатанных ларей и сумма перекладываний хранятся на устройстве. Сама раскладка не сохраняется.</p>
+
+<h3>Экраны</h3>
+<p>Тап по мешку поднимает его, тап по другому пересыпает. Опечатанный мешок не открывается.</p>
+<p>Амулет в углу открывает настройки с любого экрана, включая заставку.</p>
+<p>Каждая десятая ревизия — слова падишаха. Каждая тридцатая — картина на пять секунд, тап пропускает.</p>
+
+<h3>Доступы</h3>
+<p>Ни интернета, ни разрешений, ни учётных записей, ни рекламы, ни слежки. Игра работает полностью офлайн.</p>
+
+<h3>Источники</h3>
+<p>Логика и код: <a href="https://claude.ai">claude.ai</a> — Claude Opus 5<br>
+Иллюстрации: <a href="https://chatgpt.com">chatgpt.com</a><br>
+Исходники: <a href="https://github.com/Shumtugle/hazna">github.com/Shumtugle/hazna</a></p>
+<p class="ver">generated by AI · Claude Opus 5 · v${VERSION}</p>`
+}
+
+};
+
+function docFor(code){ return DOC[code] || DOC.en; }
+const PADISHAH_RU = [
+"Считай дважды. Второй раз — при мне.",
+"Я доверяю тебе, визирь. Потому и стою рядом.",
+"Изумруд не делается крупнее оттого, что его хвалят.",
+"В прошлом году считал другой. Он тоже был усерден.",
+"Мешок, который громко называют полным, обычно неполон.",
+"Не спеши. Спешка — это когда камни падают мимо.",
+"Ты снова уснул на ковре сокровищницы. Ковёр тёплый, я проверял.",
+"Хорошая ревизия проходит без свидетелей. Кроме меня.",
+"Оникс любит темноту. Не потакай ему.",
+"Кто считает быстро, тот считает дважды.",
+"Жемчуг я узнаю на слух: он катится тише прочих.",
+"Отец мой держал казну в порядке и умер спокойно. Совпадение, разумеется.",
+"Если камень не лезет в мешок, виноват обыкновенно не камень.",
+"Придворные говорят, что ты незаменим. Незаменимость зависит от обстоятельств.",
+"Ларь пуст? Прекрасно. Значит, работа началась.",
+"Красное к красному, синее к синему. Философия проще, чем принято думать.",
+"Не советуйся с писцом. Он пишет, а не считает.",
+"Молчание в сокровищнице означает либо сосредоточенность, либо кражу.",
+"Считай при свете. Ночью камни выглядят щедрее.",
+"Я не тороплю. Я просто сижу здесь.",
+"Мыши в казне не водятся уже сорок лет. Я с ними договорился.",
+"Шнурок затягивай туго. Развяжется — виноват будет шнурок.",
+"Купцы из Хивы уверяют, что шпинель — тот же рубин. Купцы из Хивы много говорят.",
+"Порядок — это когда всё лежит там, где я ожидаю.",
+"Ты дышишь громче, чем считаешь. Исправь одно из двух.",
+"Мой дед завёл третий ларь. Дед был оптимист.",
+"Уронишь камень — подними сам. Слуги считать не умеют, а подбирать умеют слишком хорошо.",
+"Хризолит зеленее изумруда только при свечах. Свечи в казне запрещены.",
+"Спрашивать, зачем это всё, — привилегия того, кто сидит на троне.",
+"Дважды пересчитанное золото весит столько же. Но спится лучше.",
+"Я знаю про мешок, который ты переставил вчера. Я всё знаю про мешки.",
+"Соседний хан считает камни по весу. Оттого у него и войско по весу.",
+"Терпение — единственное, чего у казны в избытке.",
+"Кошка не спешит к миске. Миска никуда не денется.",
+"Не отвлекайся на узор ковра. Ковёр ткали именно затем, чтоб ты отвлёкся.",
+"Аметист — камень вдовцов и мечтателей. Клади его туда же, куда всё.",
+"Кто путает коралл с гранатом, тот путает и приход с расходом.",
+"Я велел выпороть предыдущего визиря за медлительность. Он был медлителен и после.",
+"Тишина. Слышишь? Так звучит сходящийся счёт.",
+"Учёный муж из Бухары доказал, что порядок невозможен. Учёный муж не видел моей казны.",
+"Хорошо. Продолжай. Это, кстати, была похвала.",
+"Смотри на камень, а не на мешок. Мешок ничего не решает.",
+"Пыль в сокровищнице — свидетель усердия либо запустения. Пока не решил.",
+"Твой предшественник вёл записи. Записи сгорели. Он тоже.",
+"Не спрашивай, откуда взялся двенадцатый вид камней. Считай.",
+"Если устал — отдохни. Ларь подождёт. Я — меньше.",
+"Верблюда навьючивают тяжелее, чем визиря. Верблюд, впрочем, и не жалуется.",
+"Порядок в казне отражает порядок в державе. Обратное, к сожалению, тоже верно.",
+"Я слышал, ты назвал ревизию бессмысленной. Продолжай, я слушаю.",
+"Сапфир к сапфиру. Всё остальное — поэзия.",
+"Пятьсот ревизий провёл мой прадед. Он умер, не досчитав. Не бери пример.",
+"Твоя рука дрожит. Это от усердия или от вчерашнего?",
+"Мешок бывает мал, но никогда — виноват.",
+"Пока ты считаешь, никто в державе не ворует. Все смотрят на тебя.",
+"Хочешь награду? Награда — что ревизия закончится.",
+"Есть камни, которые я узнаю по запаху. Не спрашивай какие.",
+"Мой звездочёт утверждает, что порядок вещей записан в небе. В небе я его не нашёл.",
+"Считаешь молча — хорошо. Считаешь вслух — тревожно.",
+"Двенадцать видов камней. По одному на каждый месяц, в который ты не отдыхаешь.",
+"Ты положил гранат к рубину. Я видел. Я всё ещё вижу.",
+"Ошибка, замеченная вовремя, называется поправкой. Замеченная мной — растратой.",
+"В юности я тоже считал сам. Юность прошла быстро.",
+"Ковёр под тобой стоит дороже трети этого ларя. Не пролей.",
+"Слухи о моей щедрости преувеличены мною же.",
+"Кто хорошо считает, тот плохо спит. Спи плохо.",
+"Бирюза выцветает от жадных взглядов. Смотри равнодушнее.",
+"Не считай в уме больше трёх мешков сразу. Я пробовал.",
+"Ты моложе, чем мой первый визирь, и старше, чем мой последний. Обдумай это.",
+"Пока камни в ларе, они ничьи. В мешке они мои.",
+"Опечатанный мешок не открывают. Даже я. Особенно я.",
+"Кошка на солнце тоже занята делом. Просто дело у неё другое.",
+"Твой отчёт я прочту завтра. Сегодня я смотрю.",
+"Всякий раз одно и то же, говоришь? Всякий раз одно и то же, отвечаю.",
+"Караван из Самарканда привёз новые камни. Я велел не принимать: у тебя и так занято.",
+"Не жалей коралл. Коралл был живым и справился.",
+"Тот, кто изобрёл мешок, был умнее того, кто изобрёл ларь.",
+"Проверь дно. Дно проверяют последним и напрасно.",
+"Я не считаю сам, ибо считающий падишах пугает подданных сильнее воюющего.",
+"Дважды в жизни я ошибался. Оба раза — в людях, не в счёте.",
+"Хорошо считает не тот, кто помнит, а тот, кто перекладывает.",
+"Спрашиваешь, что будет, когда сойдётся? Придёт следующий год.",
+"Придворный поэт сложил касыду о твоём усердии. Я её не дослушал.",
+"Оникс, аметист, шпинель. Слова красивые, работа однообразная.",
+"Не трогай мой перстень взглядом. Он вне описи.",
+"Строгость моя известна. Милость известна меньше, ибо реже.",
+"Когда я был котёнком, казна помещалась в одном мешке. Хорошее было время, скучное.",
+"Всякий камень когда-то был камнем в горе. Не возгордись за них.",
+"Ты дошёл досюда, значит, считать умеешь. Осталось выяснить, честен ли.",
+"Мой лекарь советует мне меньше волноваться. Я нанял тебя.",
+"Пересчитывать за тобой я не стану. Но проверю.",
+"Сойдётся — получишь чай. Не сойдётся — тоже получишь чай, но в другом месте.",
+"Тот, кто сложил все камни правильно, обычно молчит об этом до утра.",
+"Я не помню, сколько тут рубинов. Для того ты и здесь.",
+"Не гневи меня возгласами. Гневи меня недостачей — тогда хоть повод.",
+"Сегодня хороший день. Камни блестят, визирь трудится, я сижу.",
+"Ещё десять ревизий, и я, пожалуй, доверю тебе ключ. Пожалуй.",
+"Считай так, будто я вышел. Я не выхожу.",
+"Всё сходится. Это тревожит меня больше, чем недостача.",
+"Я стар, визирь. Камни переживут нас обоих и лягут в чужие мешки.",
+"Довольно на сегодня. Оставь ларь открытым: пусть камни подышат."
+];const PADISHAH_EN = [
+"Count it twice. The second time in my presence.",
+"I trust you, vizier. That is why I am standing here.",
+"An emerald does not grow larger for being praised.",
+"Last year another man counted. He was diligent too.",
+"A sack loudly called full is usually not.",
+"Do not hurry. Hurry is when stones land beside the sack.",
+"You fell asleep on the treasury rug again. The rug is warm, I checked.",
+"A good audit has no witnesses. Except me.",
+"Onyx is fond of the dark. Do not indulge it.",
+"He who counts quickly counts twice.",
+"I know pearl by ear: it rolls more quietly than the rest.",
+"My father kept the treasury in order and died peacefully. Coincidence, of course.",
+"When a stone will not fit the sack, the stone is rarely at fault.",
+"The court says you are irreplaceable. Irreplaceability depends on circumstances.",
+"The chest is empty? Excellent. That means the work has begun.",
+"Red to red, blue to blue. Philosophy is simpler than they claim.",
+"Do not consult the scribe. He writes, he does not count.",
+"Silence in the treasury means either concentration or theft.",
+"Count by daylight. At night the stones look more generous.",
+"I am not rushing you. I am merely sitting here.",
+"There have been no mice in the treasury for forty years. We came to an arrangement.",
+"Pull the drawstring tight. If it comes loose, the drawstring will be blamed.",
+"Merchants from Khiva swear spinel is merely ruby. Merchants from Khiva say a great deal.",
+"Order is when everything lies where I expect it.",
+"You breathe louder than you count. Correct one of the two.",
+"My grandfather introduced a third chest. My grandfather was an optimist.",
+"Drop a stone, pick it up yourself. Servants cannot count, but they pick things up too well.",
+"Chrysolite is greener than emerald only by candlelight. Candles are forbidden here.",
+"Asking what all this is for is the privilege of the one on the throne.",
+"Gold counted twice weighs the same. One sleeps better, though.",
+"I know about the sack you moved yesterday. I know everything about sacks.",
+"The neighbouring khan counts his stones by weight. His army is measured the same way.",
+"Patience is the one thing this treasury has in abundance.",
+"A cat does not hurry to the bowl. The bowl is not going anywhere.",
+"Do not be distracted by the pattern of the rug. The rug was woven precisely to distract you.",
+"Amethyst is the stone of widowers and dreamers. Put it where you put everything else.",
+"He who confuses coral with garnet confuses income with expenditure as well.",
+"I had the previous vizier flogged for slowness. He remained slow afterwards.",
+"Quiet. Do you hear it? That is the sound of accounts coming together.",
+"A scholar of Bukhara proved that order is impossible. The scholar had not seen my treasury.",
+"Good. Continue. That, incidentally, was praise.",
+"Look at the stone, not at the sack. The sack decides nothing.",
+"Dust in a treasury testifies either to diligence or to neglect. I have not decided which.",
+"Your predecessor kept records. The records burned. So did he.",
+"Do not ask where the twelfth kind of stone came from. Count.",
+"If you are tired, rest. The chest will wait. I less so.",
+"A camel is loaded more heavily than a vizier. The camel, however, does not complain.",
+"Order in the treasury reflects order in the realm. Sadly, the reverse holds too.",
+"I hear you called this audit pointless. Go on, I am listening.",
+"Sapphire to sapphire. Everything else is poetry.",
+"My great-grandfather conducted five hundred audits and died before finishing. Do not follow his example.",
+"Your hand is shaking. Is that diligence, or last night?",
+"A sack may be too small, but it is never guilty.",
+"While you count, nobody in the realm is stealing. They are all watching you.",
+"You want a reward? The reward is that the audit will end.",
+"There are stones I recognise by smell. Do not ask which.",
+"My astrologer insists the order of things is written in the sky. I did not find it there.",
+"Counting in silence is good. Counting aloud is worrying.",
+"Twelve kinds of stone. One for each month you do not rest.",
+"You put garnet with ruby. I saw. I am still seeing.",
+"An error caught in time is called a correction. Caught by me, it is called embezzlement.",
+"In my youth I counted myself. Youth passed quickly.",
+"The rug beneath you is worth a third of this chest. Do not spill.",
+"Rumours of my generosity are exaggerated, chiefly by me.",
+"He who counts well sleeps badly. Sleep badly.",
+"Turquoise fades under greedy looks. Look at it with indifference.",
+"Do not hold more than three sacks in your head at once. I have tried.",
+"You are younger than my first vizier and older than my last. Reflect on that.",
+"While the stones are in the chest they belong to nobody. In a sack they are mine.",
+"A sealed sack is not opened. Not even by me. Especially not by me.",
+"A cat in the sun is also occupied. Its occupation simply differs.",
+"I shall read your report tomorrow. Today I am watching.",
+"The same thing every time, you say? The same thing every time, I answer.",
+"A caravan from Samarkand brought new stones. I refused them: you are busy enough.",
+"Do not pity the coral. Coral was once alive and managed.",
+"Whoever invented the sack was wiser than whoever invented the chest.",
+"Check the bottom. The bottom is checked last, and in vain.",
+"I do not count in person, for a counting padishah frightens subjects more than a warring one.",
+"Twice in my life I have been mistaken. Both times about people, never about numbers.",
+"The good counter is not the one who remembers but the one who moves the stones.",
+"You ask what happens when it adds up? The next year comes.",
+"The court poet composed an ode to your diligence. I did not hear it out.",
+"Onyx, amethyst, spinel. Beautiful words, monotonous work.",
+"Do not touch my ring with your eyes. It is not in the inventory.",
+"My severity is well known. My mercy less so, being rarer.",
+"When I was a kitten the treasury fit in one sack. Good times. Dull ones.",
+"Every stone was once a stone in a mountain. Do not be proud on their behalf.",
+"You have come this far, so you can count. Whether you are honest remains to be seen.",
+"My physician advises me to worry less. So I hired you.",
+"I shall not count after you. But I shall check.",
+"If it adds up, you get tea. If it does not, you also get tea, elsewhere.",
+"The one who has arranged every stone correctly usually says nothing about it until morning.",
+"I do not remember how many rubies are in there. That is what you are for.",
+"Do not vex me with exclamations. Vex me with a shortfall — at least that is a reason.",
+"Today is a good day. The stones glitter, the vizier labours, I sit.",
+"Ten more audits and I shall perhaps entrust you with a key. Perhaps.",
+"Count as though I had left the room. I do not leave.",
+"Everything adds up. That troubles me more than a shortfall would.",
+"I am old, vizier. The stones will outlive us both and settle into other men's sacks.",
+"Enough for today. Leave the chest open: let the stones breathe."
+];
+/* ---------- камни: цвет + огранка ---------- */
+const GEMS = [
+  {c:"#C62348", g:0}, {c:"#1E8F63", g:4}, {c:"#2A55B8", g:9}, {c:"#E9A81C", g:1},
+  {c:"#7B3FB8", g:3}, {c:"#35A8C4", g:2}, {c:"#33313F", g:8}, {c:"#EDE4D0", g:5},
+  {c:"#7FA33A", g:7}, {c:"#E4693C", g:6}, {c:"#B8D14A", g:10}, {c:"#E24D8C", g:11}
+];
+const MAX_GEMS = GEMS.length;
+
+/* ---------- язык ---------- */
+let langPref = "auto", T = L.en, PADISHAH = PADISHAH_EN;
+function resolveLang(){
+  let code = langPref;
+  if (code === "auto"){
+    const sys = ((navigator.language || "en").slice(0,2)).toLowerCase();
+    code = L[sys] ? sys : "en";
+  }
+  T = L[code] || L.en;
+  PADISHAH = (code === "ru") ? PADISHAH_RU : PADISHAH_EN;   // реплики пока на двух языках
+  document.documentElement.lang = code;
+}
+
+/* ---------- сохранение: только счёт, не расклад ---------- */
+/* В APK окно window.storage отсутствует, работает localStorage. */
+let save = {level:1, sealed:0, total:0, lang:"auto", sound:true};
+async function loadSave(){
+  let raw = null;
+  try{
+    if (window.storage){
+      const r = await window.storage.get("purrsia");
+      if (r && r.value) raw = r.value;
+    }
+  }catch(e){}
+  if (raw === null){
+    try{ raw = window.localStorage.getItem("purrsia"); }catch(e){}
+  }
+  if (raw){
+    try{ Object.assign(save, JSON.parse(raw)); }catch(e){}
+  }
+  langPref = save.lang || "auto";
+  audioOn = save.sound !== false;
+  resolveLang();
+}
+async function writeSave(){
+  const raw = JSON.stringify(save);
+  try{ window.localStorage.setItem("purrsia", raw); }catch(e){}
+  try{ if (window.storage) await window.storage.set("purrsia", raw); }catch(e){}
+}
+
+/* ---------- звук ---------- */
+let audioOn = true, actx = null;
+function beep(type){
+  if (!audioOn) return;
+  try{
+    if (!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+    if (type === "drop"){
+      o.type = "triangle"; o.frequency.setValueAtTime(560, t);
+      o.frequency.exponentialRampToValueAtTime(280, t+.09);
+      g.gain.setValueAtTime(.08, t); g.gain.exponentialRampToValueAtTime(.001, t+.12);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.13);
+    } else if (type === "back"){
+      o.type = "sine"; o.frequency.setValueAtTime(240, t);
+      o.frequency.exponentialRampToValueAtTime(430, t+.1);
+      g.gain.setValueAtTime(.05, t); g.gain.exponentialRampToValueAtTime(.001, t+.13);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.14);
+    } else {
+      o.type = "square"; o.frequency.setValueAtTime(180, t);
+      o.frequency.exponentialRampToValueAtTime(90, t+.16);
+      g.gain.setValueAtTime(.09, t); g.gain.exponentialRampToValueAtTime(.001, t+.22);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.23);
+    }
+  }catch(e){}
+}
+
+/* ---------- состояние партии ---------- */
+let state = null;
+let level = 1, moves = 0, selected = -1, history = [], prevSealed = new Set(), autoTimer = null;
+/* ---------- модель, солвер, генератор ---------- */
+
+function topGroup(b){
+  if (!b.length) return null;
+  const c = b[b.length-1];
+  let n = 1;
+  for (let i=b.length-2;i>=0 && b[i]===c;i--) n++;
+  return {color:c, count:n};
+}
+/* strict=true — правила поиска: солвер не тратит время на переезды с места на место.
+   strict=false — правила игрока: переложить можно всё, что физически влезает. */
+function canPour(bots, caps, i, j, strict){
+  if (i===j) return 0;
+  const src = bots[i], dst = bots[j];
+  if (!src.length) return 0;
+  const free = caps[j] - dst.length;
+  if (free <= 0) return 0;
+  const g = topGroup(src);
+  if (dst.length && dst[dst.length-1] !== g.color) return 0;
+  if (strict && !dst.length && g.count === src.length && caps[i] === caps[j]) return 0;
+  return Math.min(g.count, free);
+}
+function applyPour(bots, i, j, n){
+  const c = bots[i][bots[i].length-1];
+  for (let k=0;k<n;k++){ bots[i].pop(); bots[j].push(c); }
+}
+function isSealed(b, cap){ return b.length===cap && b.every(x=>x===b[0]); }
+/* Ревизия закончена только когда каждый непустой мешок полон, однороден и опечатан.
+   Ларь на шесть мест опечатать нельзя — он рабочее место, к концу должен быть пуст. */
+function solved(bots, colors, caps){
+  const used = new Set();
+  for (let i=0;i<bots.length;i++){
+    const b = bots[i];
+    if (!b.length) continue;
+    if (b.length !== caps[i]) return false;
+    const c = b[0];
+    for (const x of b) if (x !== c) return false;
+    if (used.has(c)) return false;
+    used.add(c);
+  }
+  return used.size === colors;
+}
+function key(bots, caps){ return bots.map((b,i)=>caps[i]+":"+b.join(",")).sort().join("|"); }
+
+/* ---------- солвер ---------- */
+/* Поиск по приоритету: сначала разбираются позиции, до порядка которым ближе.
+   Оценка остатка — число разрывов в мешках плюс раскиданность видов. */
+function Heap(){ this.a = []; }
+Heap.prototype.push = function(x){
+  const a=this.a; a.push(x); let i=a.length-1;
+  while(i>0){ const p=(i-1)>>1; if(a[p].f<=a[i].f) break; const t=a[p]; a[p]=a[i]; a[i]=t; i=p; }
+};
+Heap.prototype.pop = function(){
+  const a=this.a, top=a[0], last=a.pop();
+  if(a.length){ a[0]=last; let i=0;
+    for(;;){ const l=2*i+1, r=l+1; let m=i;
+      if(l<a.length&&a[l].f<a[m].f) m=l;
+      if(r<a.length&&a[r].f<a[m].f) m=r;
+      if(m===i) break; const t=a[m]; a[m]=a[i]; a[i]=t; i=m; }
+  }
+  return top;
+};
+Heap.prototype.size = function(){ return this.a.length; };
+
+function remaining(b){
+  let h = 0;
+  const spread = new Map();
+  for (const bag of b){
+    if (!bag.length) continue;
+    let groups = 1;
+    for (let k=1;k<bag.length;k++) if (bag[k] !== bag[k-1]) groups++;
+    h += groups - 1;
+    const seenHere = new Set(bag);
+    seenHere.forEach(c => spread.set(c, (spread.get(c)||0) + 1));
+  }
+  spread.forEach(v => { h += v - 1; });
+  return h;
+}
+
+function solve(bots0, caps, colors, nodeLimit){
+  const start = bots0.map(x=>x.slice());
+  const heap = new Heap();
+  const seen = new Set([key(start, caps)]);
+  heap.push({b:start, g:0, f:remaining(start)*2, parent:null, move:null});
+  let nodes = 0;
+
+  while (heap.size()){
+    const cur = heap.pop();
+    if (++nodes > nodeLimit) return null;
+    if (solved(cur.b, colors, caps)){
+      const path = [];
+      let n = cur;
+      while (n.move){ path.push(n.move); n = n.parent; }
+      return path.reverse();
+    }
+    const b = cur.b;
+    const list = [], merges = [];
+    for (let i=0;i<b.length;i++){
+      const g = topGroup(b[i]);
+      if (!g) continue;
+      for (let j=0;j<b.length;j++){
+        const n = canPour(b, caps, i, j, true);
+        if (!n) continue;
+        const m = {i,j,n};
+        list.push(m);
+        if (b[j].length && n === g.count) merges.push(m);   // горсть уходит к своим целиком
+      }
+    }
+    const moves = merges.length ? merges : list;
+    for (const m of moves){
+      const nb = b.map(x=>x.slice());
+      applyPour(nb, m.i, m.j, m.n);
+      const k = key(nb, caps);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      heap.push({b:nb, g:cur.g+1, f:cur.g+1+remaining(nb)*2, parent:cur, move:[m.i,m.j]});
+    }
+  }
+  return null;
+}
+
+/* ---------- генератор ---------- */
+/* Добыча и тара считаются вместе: сколько камней вида, столько мест в его мешке.
+   Ларь на одно место больше самого крупного мешка — опечатать его нельзя никогда.
+   Раздача строится обратным ходом из опечатанной казны: каждый шаг обратим,
+   значит путь назад существует всегда. Солвер при раздаче не нужен. */
+function rnd(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
+function shuffle(a){
+  for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function levelPlan(n){
+  // на маленьком экране казна беднее — иначе мешки пришлось бы мельчить
+  const room = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 700;
+  const ceiling = room >= 780 ? MAX_GEMS : (room >= 660 ? 10 : 8);
+  const base = Math.min(4 + Math.floor((n-1)/2), ceiling);
+  const colors = Math.max(3, Math.min(ceiling, base + [-1,0,0,1][rnd(0,3)]));
+  let lo = 3, hi = 4;
+  if (n >= 5) hi = 5;
+  if (n >= 9) hi = 6;
+  if (n >= 13) lo = 4;
+  const counts = [];
+  for (let i=0;i<colors;i++) counts.push(rnd(lo, hi));
+  shuffle(counts);
+  const chestCap = Math.max.apply(null, counts) + 1;
+  const chestN = colors <= 6 ? 1 : 2;
+  return {colors, counts, chestCap, chestN};
+}
+
+/* один обратный шаг: снять k верхних камней одного вида и положить туда,
+   откуда прямой ход вернёт ровно их же */
+function unmove(bots, caps){
+  const from = [];
+  for (let i=0;i<bots.length;i++) if (bots[i].length) from.push(i);
+  shuffle(from);
+  for (const i of from){
+    const g = topGroup(bots[i]);
+    const maxK = (g.count === bots[i].length) ? g.count : g.count - 1;  // либо опустошаем, либо оставляем свой вид сверху
+    if (maxK < 1) continue;
+    const k = rnd(1, maxK);
+    const to = [];
+    for (let j=0;j<bots.length;j++){
+      if (j === i) continue;
+      if (caps[j] - bots[j].length < k) continue;
+      if (bots[j].length && bots[j][bots[j].length-1] === g.color) continue;  // иначе горсти слипнутся
+      to.push(j);
+    }
+    if (!to.length) continue;
+    const j = to[rnd(0, to.length-1)];
+    for (let t=0;t<k;t++){ bots[i].pop(); bots[j].push(g.color); }
+    return true;
+  }
+  return false;
+}
+
+function buildLevel(n){
+  const {colors, counts, chestCap, chestN} = levelPlan(n);
+  const caps = counts.slice();
+  const chest = caps.map(()=>false);
+  for (let i=0;i<chestN;i++){ caps.push(chestCap); chest.push(true); }
+
+  let best = null, bestMess = -1;
+  for (let attempt=0; attempt<12; attempt++){
+    const bots = caps.map(()=>[]);
+    for (let c=0;c<colors;c++) for (let k=0;k<counts[c];k++) bots[c].push(c);
+    const steps = colors * 14 + 30;
+    for (let s=0;s<steps;s++) if (!unmove(bots, caps)) break;
+
+    let sealedAtStart = 0;
+    bots.forEach((b,i)=>{ if (b.length && b.length===caps[i] && b.every(x=>x===b[0])) sealedAtStart++; });
+    const mess = remaining(bots) - sealedAtStart*4;
+    if (mess > bestMess){ bestMess = mess; best = bots; }
+    if (!sealedAtStart && mess >= colors + 4) return {caps, chest, bots, colors};
+  }
+  return {caps, chest, bots: best, colors};
+}
+
+/* ---------- отрисовка ---------- */
+const shelf = document.getElementById("shelf");
+const chests = document.getElementById("chests");
+const $ = id => document.getElementById(id);
+
+function rowsFor(caps, perRow){
+  const rows = [];
+  for (let i=0;i<caps.length;i+=perRow) rows.push(caps.slice(i, i+perRow));
+  return rows;
+}
+
+function fitSizes(){
+  const ordered = state.order.map(i => state.caps[i]);
+  const chestCaps = state.chestOrder.map(i => state.caps[i]);
+  const maxChest = chestCaps.length ? Math.max.apply(null, chestCaps) : 0;
+  const head = document.querySelector("header").offsetHeight;
+  const foot = document.querySelector("footer").offsetHeight;
+  const availH = window.innerHeight - head - foot - 18;
+  const availW = Math.min(window.innerWidth, 520) - 14;
+  const ROW_PAD = 24;
+
+  let best = null;
+  for (let pr = 3; pr <= 6; pr++){
+    if (pr > ordered.length && pr > 3) break;
+    const w = Math.floor(availW / pr) - 12;
+    if (w < 40) continue;
+    const rows = rowsFor(ordered, pr);
+    const units = rows.reduce((sum, r) => sum + Math.max.apply(null, r), 0) + maxChest;
+    const rowCount = rows.length + (chestCaps.length ? 1 : 0);
+    let u = Math.floor((availH - rowCount * ROW_PAD) / Math.max(1, units));
+    u = Math.min(u, Math.floor((w - 18) / 1.5), 46);
+    if (!best || u > best.u) best = {u, w: Math.min(w, 92), perRow: pr};
+  }
+  if (!best) best = {u:15, w:44, perRow:4};
+  best.u = Math.max(best.u, 14);
+  document.documentElement.style.setProperty("--u", best.u+"px");
+  document.documentElement.style.setProperty("--w", best.w+"px");
+  shelf.style.maxWidth = (best.perRow * (best.w + 12)) + "px";
+}
+
+function gemEl(idx, cls){
+  const g = document.createElement("span");
+  g.className = "gem " + cls + " g" + GEMS[idx].g;
+  g.style.setProperty("--c", GEMS[idx].c);
+  return g;
+}
+
+function render(){
+  shelf.innerHTML = ""; chests.innerHTML = "";
+  const nowSealed = new Set();
+  state.order.concat(state.chestOrder).forEach(idx => {
+    const b = state.bots[idx], cap = state.caps[idx];
+    const sealed = isSealed(b, cap);
+    if (sealed) nowSealed.add(idx);
+
+    const el = document.createElement("div");
+    el.className = "sack" + (idx===selected ? " sel" : "") + (sealed ? " sealed" : "");
+    if (sealed && !prevSealed.has(idx)) { el.classList.add("sealing"); beep("seal"); }
+    el.dataset.i = idx;
+    el.style.setProperty("--cap", cap);
+
+    const cuff = document.createElement("div"); cuff.className = "cuff";
+    const mouth = document.createElement("div"); mouth.className = "mouth";
+    b.forEach(c => {
+      const layer = document.createElement("div");
+      layer.className = "layer";
+      layer.appendChild(gemEl(c, "sml"));
+      layer.appendChild(gemEl(c, "big"));
+      layer.appendChild(gemEl(c, "sml"));
+      mouth.appendChild(layer);
+    });
+    const seal = document.createElement("div"); seal.className = "seal";
+    if (b.length){ const dot = document.createElement("i"); dot.style.setProperty("--sc", GEMS[b[0]].c); seal.appendChild(dot); }
+
+    el.appendChild(cuff); el.appendChild(mouth); el.appendChild(seal);
+    (state.chest[idx] ? chests : shelf).appendChild(el);
+  });
+  prevSealed = nowSealed;
+  $("lvl").textContent = level;
+  $("mv").textContent = moves;
+  $("undo").disabled = autoTimer !== null || history.length === 0;
+}
+
+function flyGem(fromEl, toEl, gi){
+  const a = fromEl.getBoundingClientRect(), b = toEl.getBoundingClientRect();
+  const d = document.createElement("div");
+  d.className = "fly g" + GEMS[gi].g;
+  d.style.background = GEMS[gi].c;
+  d.style.left = (a.left + a.width/2 - 10) + "px";
+  d.style.top = (a.top - 2) + "px";
+  document.body.appendChild(d);
+  const dx = (b.left + b.width/2) - (a.left + a.width/2);
+  const dy = (b.top - 2) - (a.top - 2);
+  d.animate(
+    [{transform:"translate(0,0) rotate(0deg)"},
+     {transform:"translate("+(dx*0.5)+"px,"+(Math.min(dy,0)-32)+"px) rotate(160deg)", offset:.5},
+     {transform:"translate("+dx+"px,"+dy+"px) rotate(320deg)", opacity:.3}],
+    {duration:280, easing:"cubic-bezier(.4,.1,.6,1)"}
+  ).onfinish = () => d.remove();
+}
+
+/* ---------- ход ---------- */
+function sackEl(i){ return document.querySelector('.sack[data-i="'+i+'"]'); }
+
+function doMove(i, j, n){
+  const gi = state.bots[i][state.bots[i].length-1];
+  const from = sackEl(i), to = sackEl(j);
+  if (from && to) flyGem(from, to, gi);
+  beep("drop");
+  history.push({bots: state.bots.map(x=>x.slice()), moves});
+  applyPour(state.bots, i, j, n);
+  moves++; selected = -1;
+  render();
+  return solved(state.bots, state.colors, state.caps);
+}
+
+function tap(i){
+  if (autoTimer) return;
+  if (isSealed(state.bots[i], state.caps[i])) return;
+  if (selected === -1){
+    if (!state.bots[i].length) return;
+    selected = i; render(); return;
+  }
+  if (selected === i){ selected = -1; render(); return; }
+  const n = canPour(state.bots, state.caps, selected, i, false);
+  if (!n){ selected = state.bots[i].length ? i : -1; render(); return; }
+  if (doMove(selected, i, n)) setTimeout(win, 620);
+}
+
+document.addEventListener("click", e => {
+  const el = e.target.closest(".sack");
+  if (el) tap(parseInt(el.dataset.i, 10));
+});
+
+/* ---------- разбор за игрока ---------- */
+function stopAuto(){
+  if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
+  $("auto").textContent = T.solve;
+  ["undo","reset","hint"].forEach(id => $(id).disabled = false);
+  $("undo").disabled = history.length === 0;
+}
+function bagsAt(k){ return k < history.length ? history[k].bots : state.bots; }
+function lastSolvable(){
+  let lo = 0, hi = history.length, best = null;
+  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000);
+  if (!p0) return null;
+  best = {index:0, path:p0};
+  while (lo + 1 < hi){
+    const mid = (lo + hi) >> 1;
+    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000);
+    if (p){ lo = mid; best = {index:mid, path:p}; } else hi = mid;
+  }
+  return best;
+}
+function playPath(path){
+  $("auto").textContent = T.stop;
+  let k = 0;
+  const step = () => {
+    if (k >= path.length){ stopAuto(); return; }
+    const [i,j] = path[k++];
+    const n = canPour(state.bots, state.caps, i, j, false);
+    if (!n){ stopAuto(); return; }
+    if (doMove(i, j, n)){ autoTimer = null; stopAuto(); setTimeout(win, 620); return; }
+    autoTimer = setTimeout(step, 430);
+  };
+  autoTimer = setTimeout(step, 140);
+}
+function rewindTo(target, then){
+  $("auto").textContent = T.rewinding;
+  const step = () => {
+    if (history.length <= target){ autoTimer = null; then(); return; }
+    const h = history.pop();
+    state.bots = h.bots; moves = h.moves; selected = -1;
+    prevSealed = new Set();
+    state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+    beep("back"); render();
+    autoTimer = setTimeout(step, 260);
+  };
+  autoTimer = setTimeout(step, 140);
+}
+
+/* ---------- кнопки ---------- */
+$("undo").onclick = () => {
+  if (autoTimer) return;
+  const h = history.pop();
+  if (!h) return;
+  state.bots = h.bots; moves = h.moves; selected = -1;
+  prevSealed = new Set();
+  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+  render();
+};
+$("reset").onclick = () => { stopAuto(); startLevel(level); };
+$("hint").onclick = () => {
+  if (autoTimer) return;
+  const btn = $("hint");
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000);
+  if (!path || !path.length){
+    btn.textContent = T.noWay;
+    setTimeout(()=>btn.textContent = T.hint, 1800);
+    return;
+  }
+  const [i,j] = path[0];
+  sackEl(i).classList.add("sel");
+  setTimeout(()=>{ const e=sackEl(j); if(e) e.classList.add("sel"); }, 220);
+  setTimeout(render, 1100);
+};
+$("auto").onclick = () => {
+  const btn = $("auto");
+  if (autoTimer){ stopAuto(); return; }
+  ["undo","reset","hint"].forEach(id => $(id).disabled = true);
+  selected = -1;
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000);
+  if (path && path.length){ playPath(path); return; }
+  const back = lastSolvable();
+  if (!back){
+    btn.textContent = T.noWay;
+    setTimeout(stopAuto, 1800);
+    return;
+  }
+  rewindTo(back.index, () => playPath(back.path));
+};
+
+/* ---------- уровни ---------- */
+function startLevel(n){
+  if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
+  level = n; moves = 0; selected = -1; history = []; prevSealed = new Set();
+  state = buildLevel(n);
+  state.order = state.caps.map((c,i)=>i).filter(i=>!state.chest[i])
+                          .sort((a,b)=>state.caps[b]-state.caps[a]);
+  state.chestOrder = state.caps.map((c,i)=>i).filter(i=>state.chest[i]);
+  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+  $("veil").classList.remove("on");
+  stopAuto();
+  render(); fitSizes(); render();
+}
+
+function win(){
+  const royal = (level % 10 === 0);
+  $("veilTitle").textContent = royal ? T.royal : T.sealed;
+  $("veilQuote").textContent = royal ? "\u00AB" + PADISHAH[(level/10 - 1) % PADISHAH.length] + "\u00BB" : "";
+  $("veilQuote").style.display = royal ? "" : "none";
+  $("veilCount").textContent = T.levelLbl + " " + level + " · " + T.movesLbl + " " + moves;
+  $("next").textContent = T.next;
+  $("veil").classList.add("on");
+  save.level = level + 1;
+  save.sealed = (save.sealed || 0) + 1;
+  save.total = (save.total || 0) + moves;
+  writeSave();
+}
+const ART_COUNT = 10;                 // рисунки лежат в art/01.jpg … art/10.jpg
+/* Колода: за десять заставок каждая картина выпадет ровно раз, порядок случайный,
+   и подряд одна и та же не повторяется. */
+let artDeck = [];
+function nextArt(){
+  if (!artDeck.length){
+    const last = save.lastArt;
+    for (let i=1;i<=ART_COUNT;i++) artDeck.push(i);
+    for (let i=artDeck.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      const t = artDeck[i]; artDeck[i] = artDeck[j]; artDeck[j] = t;
+    }
+    if (artDeck.length > 1 && artDeck[artDeck.length-1] === last){
+      const t = artDeck[artDeck.length-1];
+      artDeck[artDeck.length-1] = artDeck[0]; artDeck[0] = t;
+    }
+  }
+  const n = artDeck.pop();
+  save.lastArt = n; writeSave();
+  return n;
+}
+function showArt(then){
+  const n = nextArt();
+  const box = $("artSplash"), img = $("artImg");
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    box.classList.remove("on");
+    box.onclick = null;
+    then();
+  };
+  img.onerror = () => { img.onerror = null; finish(); };   // нет файла — идём дальше без паузы
+  img.src = "art/" + (n < 10 ? "0" + n : n) + ".jpg";
+  box.classList.add("on");
+  box.onclick = finish;
+  setTimeout(finish, 5000);
+}
+$("next").onclick = () => {
+  const done = level;
+  $("veil").classList.remove("on");
+  if (done % 30 === 0) showArt(() => startLevel(done + 1));
+  else startLevel(done + 1);
+};
+window.addEventListener("resize", () => { if (state){ fitSizes(); render(); } });
+
+/* ---------- надписи ---------- */
+function applyLang(){
+  resolveLang();
+  document.documentElement.dir = RTL.indexOf(document.documentElement.lang) >= 0 ? "rtl" : "ltr";
+  $("lvlLbl").textContent = T.levelLbl;
+  $("mvLbl").textContent = T.movesLbl;
+  $("undo").textContent = T.undo;
+  $("reset").textContent = T.reset;
+  $("hint").textContent = T.hint;
+  $("auto").textContent = T.solve;
+  $("menuSub").textContent = T.sub;
+  $("splashTag").textContent = T.sub;
+  $("descText").innerHTML = T.desc.map(p => "<p>" + p + "</p>").join("");
+  $("playBtn").innerHTML = save.level > 1
+      ? T.play + "<small>" + T.levelLbl + " " + save.level + "</small>"
+      : T.playNew;
+  $("menuSound").textContent = T.sound + ": " + (audioOn ? T.on : T.off);
+  $("menuFresh").textContent = T.fresh;
+  $("menuLang").textContent = T.language;
+  $("aboutMenu").textContent = T.about;
+  $("aboutBtn").textContent = T.aboutBtn;
+  $("aboutTitle").textContent = docFor(document.documentElement.lang).title;
+  $("aboutBody").innerHTML = docFor(document.documentElement.lang).body;
+  $("closeAbout").textContent = T.close;
+  $("setupTitle").textContent = T.settings;
+  $("langLbl").textContent = T.language;
+  $("soundBtn").textContent = T.sound + ": " + (audioOn ? T.on : T.off);
+  $("freshBtn").textContent = T.fresh;
+  $("closeSetup").textContent = T.close;
+  $("tally").textContent = T.stats + ": " + (save.sealed||0) + "\n" + T.total + ": " + (save.total||0);
+  $("next").textContent = T.next;
+}
+
+/* ---------- настройки ---------- */
+function buildFlags(){
+  const box = $("flags");
+  box.innerHTML = "";
+  LANGS.forEach(l => {
+    const b = document.createElement("button");
+    b.textContent = l.flag;
+    if (l.code === langPref) b.classList.add("on");
+    b.onclick = () => {
+      langPref = l.code; save.lang = l.code; writeSave();
+      applyLang(); buildFlags();
+    };
+    box.appendChild(b);
+  });
+}
+function openSetup(){ applyLang(); buildFlags(); $("setup").classList.add("on"); }
+$("amulet").onclick = e => { e.stopPropagation(); openSetup(); };
+$("amulet").onerror = () => { $("amulet").classList.add("hidden"); };
+$("closeSetup").onclick = () => $("setup").classList.remove("on");
+$("aboutBtn").onclick = () => { $("about").classList.add("on"); };
+$("closeAbout").onclick = () => $("about").classList.remove("on");
+function toggleSound(){
+  audioOn = !audioOn; save.sound = audioOn; writeSave();
+  const label = T.sound + ": " + (audioOn ? T.on : T.off);
+  $("soundBtn").textContent = label;
+  $("menuSound").textContent = label;
+  if (audioOn) beep("drop");
+}
+$("soundBtn").onclick = toggleSound;
+$("menuSound").onclick = toggleSound;
+function armFresh(btn){
+  if (btn.dataset.armed){
+    save.level = 1; save.sealed = 0; save.total = 0;
+    writeSave();
+    delete btn.dataset.armed;
+    $("setup").classList.remove("on");
+    $("menu").classList.remove("on");
+    $("veil").classList.remove("on");
+    applyLang();
+    startLevel(1);
+    return;
+  }
+  btn.dataset.armed = "1";
+  btn.textContent = T.freshAsk;
+  setTimeout(()=>{ if (btn.dataset.armed){ delete btn.dataset.armed; btn.textContent = T.fresh; } }, 4000);
+}
+$("freshBtn").onclick = () => armFresh($("freshBtn"));
+$("menuFresh").onclick = () => armFresh($("menuFresh"));
+$("menuLang").onclick = openSetup;
+
+/* ---------- запуск ---------- */
+(async function boot(){
+  const splash = $("splash");
+  let shown = false;
+  const leaveSplash = () => {
+    if (shown) return;
+    shown = true;
+    splash.classList.remove("on");
+    setTimeout(()=>{ splash.style.display = "none"; }, 400);
+    $("menu").classList.add("on");
+  };
+  splash.onclick = leaveSplash;
+  $("splashImg").onerror = leaveSplash;
+  setTimeout(leaveSplash, 5000);          // ставим до всего прочего: заставка уйдёт в любом случае
+
+  await loadSave();
+  applyLang();
+  buildFlags();
+
+  $("playBtn").onclick = () => {
+    $("menu").classList.remove("on");
+    startLevel(save.level || 1);
+  };
+
+  $("splashName").textContent = "HAZNA";
+  $("splashTag").textContent = T.sub;
+})();
+
+</script>
+</body>
+</html>
