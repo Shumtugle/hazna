@@ -253,8 +253,11 @@
     <div class="menugrid">
       <button id="soundBtn"></button>
       <button id="freshBtn"></button>
+      <button id="rulesBtn"></button>
       <button id="aboutBtn"></button>
-      <button id="closeSetup"></button>
+    </div>
+    <div class="menugrid">
+      <button id="closeSetup" style="grid-column:1 / -1"></button>
     </div>
     <p class="tally" id="tally"></p>
   </div>
@@ -283,6 +286,7 @@ const RTL = ["ar","iw","ur"];
 const L = {};
 
 L.en = {
+  rules:"Rules", hard:"strict", soft:"forgiving",
   aboutBtn:"About",
   sub:"The padishah's audit",
   levelLbl:"audit", movesLbl:"moves",
@@ -303,6 +307,7 @@ L.en = {
 };
 
 L.ru = {
+  rules:"Правила", hard:"строгие", soft:"мягкие",
   aboutBtn:"Об игре",
   sub:"Ревизия ханских ларей",
   levelLbl:"ревизия", movesLbl:"перекладываний",
@@ -323,6 +328,7 @@ L.ru = {
 };
 
 L.de = {
+  rules:"Regeln", hard:"streng", soft:"milde",
   aboutBtn:"Über das Spiel",
   sub:"Die Prüfung des Padischahs",
   levelLbl:"Prüfung", movesLbl:"Züge",
@@ -343,6 +349,7 @@ L.de = {
 };
 
 L.fr = {
+  rules:"Règles", hard:"strictes", soft:"clémentes",
   aboutBtn:"À propos",
   sub:"L'audit du padischah",
   levelLbl:"audit", movesLbl:"coups",
@@ -363,6 +370,7 @@ L.fr = {
 };
 
 L.es = {
+  rules:"Reglas", hard:"estrictas", soft:"indulgentes",
   aboutBtn:"Acerca de",
   sub:"La auditoría del padishah",
   levelLbl:"auditoría", movesLbl:"movimientos",
@@ -383,6 +391,7 @@ L.es = {
 };
 
 L.sv = {
+  rules:"Regler", hard:"stränga", soft:"milda",
   aboutBtn:"Om spelet",
   sub:"Padishahens revision",
   levelLbl:"revision", movesLbl:"drag",
@@ -403,6 +412,7 @@ L.sv = {
 };
 
 L.fi = {
+  rules:"Säännöt", hard:"tiukat", soft:"lempeät",
   aboutBtn:"Tietoja",
   sub:"Padishahin tilintarkastus",
   levelLbl:"tarkastus", movesLbl:"siirtoa",
@@ -423,6 +433,7 @@ L.fi = {
 };
 
 L.uk = {
+  rules:"Правила", hard:"суворі", soft:"м'які",
   aboutBtn:"Про гру",
   sub:"Ревізія ханських скринь",
   levelLbl:"ревізія", movesLbl:"перекладань",
@@ -442,6 +453,7 @@ L.uk = {
   ]
 };
 L.ar = {
+  rules:"القواعد", hard:"صارمة", soft:"متساهلة",
   aboutBtn:"حول اللعبة",
   sub:"تدقيق خزانة الباديشاه",
   levelLbl:"تدقيق", movesLbl:"نقلة",
@@ -462,6 +474,7 @@ L.ar = {
 };
 
 L.iw = {
+  rules:"כללים", hard:"נוקשים", soft:"סלחניים",
   aboutBtn:"אודות",
   sub:"ביקורת אוצר הפאדישאה",
   levelLbl:"ביקורת", movesLbl:"מהלכים",
@@ -482,6 +495,7 @@ L.iw = {
 };
 
 L.ur = {
+  rules:"اصول", hard:"سخت", soft:"نرم",
   aboutBtn:"تعارف",
   sub:"بادشاہ کے خزانے کی جانچ",
   levelLbl:"جانچ", movesLbl:"چالیں",
@@ -502,6 +516,7 @@ L.ur = {
 };
 
 L.kk = {
+  rules:"Ережелер", hard:"қатаң", soft:"жұмсақ",
   aboutBtn:"Ойын туралы",
   sub:"Падишах қазынасының тексерісі",
   levelLbl:"тексеріс", movesLbl:"жүріс",
@@ -522,6 +537,7 @@ L.kk = {
 };
 
 L.ky = {
+  rules:"Эрежелер", hard:"катуу", soft:"жумшак",
   aboutBtn:"Оюн жөнүндө",
   sub:"Падыша казынасынын текшерүүсү",
   levelLbl:"текшерүү", movesLbl:"жүрүш",
@@ -542,6 +558,7 @@ L.ky = {
 };
 
 L.zh = {
+  rules:"规则", hard:"严格", soft:"宽容",
   aboutBtn:"关于",
   sub:"帕迪沙的清点",
   levelLbl:"清点", movesLbl:"步",
@@ -667,7 +684,7 @@ zh: [
 
 for (const code in DESC) if (L[code]) L[code].desc = DESC[code];
 /* ---------- подробное описание (как у Meno): разделы, ссылки, версия ---------- */
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 const DOC = {
 
@@ -682,7 +699,12 @@ en: {
 <p>Progress: level, chests sealed and total moves are kept on the device. The board itself is not saved.</p>
 
 <h3>Screens</h3>
-<p>Tap a sack to lift it, tap another to pour. A sealed sack cannot be opened.</p>
+<p>Tap a sack to lift it, tap another to pour. A full sack seals itself.</p>
+
+<h3>Two sets of rules</h3>
+<p><b>Strict</b> (default): a seal is final. A sack closed on the wrong stones stays closed, and a careless move can cost the whole audit. Every deal is still solvable at the start — only your own hand can ruin it.</p>
+<p><b>Forgiving</b>: tap a seal to tear it off and put the sack back to work. Mistakes cost moves, never the audit.</p>
+<p>Switch in settings; the current audit restarts.</p>
 <p>The amulet in the corner opens settings from any screen, splash included.</p>
 <p>Every tenth audit: a remark from the padishah. Every thirtieth: a painting, five seconds, tap to skip.</p>
 
@@ -707,7 +729,12 @@ ru: {
 <p>Прогресс: ревизия, число опечатанных ларей и сумма перекладываний хранятся на устройстве. Сама раскладка не сохраняется.</p>
 
 <h3>Экраны</h3>
-<p>Тап по мешку поднимает его, тап по другому пересыпает. Опечатанный мешок не открывается.</p>
+<p>Тап по мешку поднимает его, тап по другому пересыпает. Полный мешок затягивается сам.</p>
+
+<h3>Двое правил</h3>
+<p><b>Строгие</b> (по умолчанию): пломба окончательна. Мешок, закрытый не на тех камнях, останется закрытым, и один неосторожный ход может стоить всей ревизии. Раздача при этом всегда проходима — испортить её может только твоя рука.</p>
+<p><b>Мягкие</b>: тап по пломбе срывает её и возвращает мешок в работу. Ошибка стоит ходов, но не ревизии.</p>
+<p>Переключается в настройках; текущая ревизия начинается заново.</p>
 <p>Амулет в углу открывает настройки с любого экрана, включая заставку.</p>
 <p>Каждая десятая ревизия — слова падишаха. Каждая тридцатая — картина на пять секунд, тап пропускает.</p>
 
@@ -950,7 +977,7 @@ function resolveLang(){
 
 /* ---------- сохранение: только счёт, не расклад ---------- */
 /* В APK окно window.storage отсутствует, работает localStorage. */
-let save = {level:1, sealed:0, total:0, lang:"auto", sound:true};
+let save = {level:1, sealed:0, total:0, lang:"auto", sound:true, hard:true};
 async function loadSave(){
   let raw = null;
   try{
@@ -967,6 +994,7 @@ async function loadSave(){
   }
   langPref = save.lang || "auto";
   audioOn = save.sound !== false;
+  hardMode = save.hard !== false;
   resolveLang();
 }
 async function writeSave(){
@@ -1004,6 +1032,8 @@ function beep(type){
 /* ---------- состояние партии ---------- */
 let state = null;
 let level = 1, moves = 0, selected = -1, history = [], prevSealed = new Set(), autoTimer = null;
+let opened = new Set();   // мешки, с которых сорвали пломбу (только в мягких правилах)
+let hardMode = true;      // строгие правила: пломба окончательна
 /* ---------- модель, солвер, генератор ---------- */
 
 function topGroup(b){
@@ -1019,6 +1049,7 @@ function canPour(bots, caps, i, j, strict){
   if (i===j) return 0;
   const src = bots[i], dst = bots[j];
   if (!src.length) return 0;
+  if (hardMode && isSealed(src, caps[i])) return 0;   // строгие правила: пломба окончательна
   const free = caps[j] - dst.length;
   if (free <= 0) return 0;
   const g = topGroup(src);
@@ -1030,7 +1061,17 @@ function applyPour(bots, i, j, n){
   const c = bots[i][bots[i].length-1];
   for (let k=0;k<n;k++){ bots[i].pop(); bots[j].push(c); }
 }
-function isSealed(b, cap){ return b.length===cap && b.every(x=>x===b[0]); }
+/* Полный однородный мешок затягивается сам — но эту пломбу можно сорвать тапом.
+   Окончательна лишь та, где собран весь вид целиком: срывать её незачем. */
+function isSealed(b, cap){
+  if (!b.length || b.length !== cap) return false;
+  const c = b[0];
+  for (const x of b) if (x !== c) return false;
+  return true;
+}
+function isFinal(b, cap, totals){
+  return isSealed(b, cap) && (!totals || b.length === totals[b[0]]);
+}
 /* Ревизия закончена только когда каждый непустой мешок полон, однороден и опечатан.
    Ларь на шесть мест опечатать нельзя — он рабочее место, к концу должен быть пуст. */
 function solved(bots, colors, caps){
@@ -1083,7 +1124,11 @@ function remaining(b){
   return h;
 }
 
-function solve(bots0, caps, colors, nodeLimit){
+let SOLVE_TOTALS = null;
+function totalsFor(c){ return SOLVE_TOTALS ? SOLVE_TOTALS[c] : Infinity; }
+
+function solve(bots0, caps, colors, nodeLimit, totals){
+  SOLVE_TOTALS = totals || null;
   const start = bots0.map(x=>x.slice());
   const heap = new Heap();
   const seen = new Set([key(start, caps)]);
@@ -1107,12 +1152,19 @@ function solve(bots0, caps, colors, nodeLimit){
       for (let j=0;j<b.length;j++){
         const n = canPour(b, caps, i, j, true);
         if (!n) continue;
+        // при строгих правилах ход, запирающий мешок не на всех камнях вида, — ловушка:
+        // достать оттуда уже нельзя, значит к победе он привести не может
+        if (hardMode && b[j].length + n === caps[j]
+            && b[j].every(x => x === g.color)                 // мешок станет однородным, то есть опечатается
+            && b[j].length + n !== totalsFor(g.color)) continue;   // но вид собран не весь — ловушка
         const m = {i,j,n};
         list.push(m);
         if (b[j].length && n === g.count) merges.push(m);   // горсть уходит к своим целиком
       }
     }
-    const moves = merges.length ? merges : list;
+    // при строгих правилах доминирующее правило теряет полноту: слияние может отрезать
+    // единственный путь, поэтому там перебираем все ходы
+    const moves = (!hardMode && merges.length) ? merges : list;
     for (const m of moves){
       const nb = b.map(x=>x.slice());
       applyPour(nb, m.i, m.j, m.n);
@@ -1173,7 +1225,11 @@ function unmove(bots, caps){
       to.push(j);
     }
     if (!to.length) continue;
-    const j = to[rnd(0, to.length-1)];
+    // прямой ход пойдёт из j обратно в i: значит после укладки мешок j не должен оказаться
+    // полным и однородным, иначе при строгих правилах он опечатается и путь назад пропадёт
+    const safe = to.filter(j => !(bots[j].length + k === caps[j] && bots[j].every(x => x === g.color)));
+    if (!safe.length) continue;
+    const j = safe[rnd(0, safe.length-1)];
     for (let t=0;t<k;t++){ bots[i].pop(); bots[j].push(g.color); }
     return true;
   }
@@ -1194,12 +1250,12 @@ function buildLevel(n){
     for (let s=0;s<steps;s++) if (!unmove(bots, caps)) break;
 
     let sealedAtStart = 0;
-    bots.forEach((b,i)=>{ if (b.length && b.length===caps[i] && b.every(x=>x===b[0])) sealedAtStart++; });
+    bots.forEach((b,i)=>{ if (isSealed(b, caps[i])) sealedAtStart++; });
     const mess = remaining(bots) - sealedAtStart*4;
     if (mess > bestMess){ bestMess = mess; best = bots; }
-    if (!sealedAtStart && mess >= colors + 4) return {caps, chest, bots, colors};
+    if (!sealedAtStart && mess >= colors + 4) return {caps, chest, bots, colors, totals:counts.slice()};
   }
-  return {caps, chest, bots: best, colors};
+  return {caps, chest, bots: best, colors, totals:counts.slice()};
 }
 
 /* ---------- отрисовка ---------- */
@@ -1254,12 +1310,12 @@ function render(){
   const nowSealed = new Set();
   state.order.concat(state.chestOrder).forEach(idx => {
     const b = state.bots[idx], cap = state.caps[idx];
-    const sealed = isSealed(b, cap);
-    if (sealed) nowSealed.add(idx);
+    const shut = isSealed(b, cap) && (hardMode || !opened.has(idx));
+    if (shut) nowSealed.add(idx);
 
     const el = document.createElement("div");
-    el.className = "sack" + (idx===selected ? " sel" : "") + (sealed ? " sealed" : "");
-    if (sealed && !prevSealed.has(idx)) { el.classList.add("sealing"); beep("seal"); }
+    el.className = "sack" + (idx===selected ? " sel" : "") + (shut ? " sealed" : "");
+    if (shut && !prevSealed.has(idx)) { el.classList.add("sealing"); beep("seal"); }
     el.dataset.i = idx;
     el.style.setProperty("--cap", cap);
 
@@ -1311,7 +1367,8 @@ function doMove(i, j, n){
   const from = sackEl(i), to = sackEl(j);
   if (from && to) flyGem(from, to, gi);
   beep("drop");
-  history.push({bots: state.bots.map(x=>x.slice()), moves});
+  history.push({bots: state.bots.map(x=>x.slice()), moves, opened: Array.from(opened)});
+  opened.delete(i); opened.delete(j);
   applyPour(state.bots, i, j, n);
   moves++; selected = -1;
   render();
@@ -1320,7 +1377,14 @@ function doMove(i, j, n){
 
 function tap(i){
   if (autoTimer) return;
-  if (isSealed(state.bots[i], state.caps[i])) return;
+  if (isSealed(state.bots[i], state.caps[i]) && (hardMode || !opened.has(i))){
+    if (hardMode) return;                // строгие правила: опечатанный мешок не трогают
+    opened.add(i);                       // мягкие: пломбу сорвали, мешок снова в работе
+    selected = i;
+    beep("back");
+    render();
+    return;
+  }
   if (selected === -1){
     if (!state.bots[i].length) return;
     selected = i; render(); return;
@@ -1346,12 +1410,12 @@ function stopAuto(){
 function bagsAt(k){ return k < history.length ? history[k].bots : state.bots; }
 function lastSolvable(){
   let lo = 0, hi = history.length, best = null;
-  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000);
+  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
   if (!p0) return null;
   best = {index:0, path:p0};
   while (lo + 1 < hi){
     const mid = (lo + hi) >> 1;
-    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000);
+    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
     if (p){ lo = mid; best = {index:mid, path:p}; } else hi = mid;
   }
   return best;
@@ -1375,8 +1439,9 @@ function rewindTo(target, then){
     if (history.length <= target){ autoTimer = null; then(); return; }
     const h = history.pop();
     state.bots = h.bots; moves = h.moves; selected = -1;
+    opened = new Set(h.opened || []);
     prevSealed = new Set();
-    state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+    state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i]) && !opened.has(i)) prevSealed.add(i); });
     beep("back"); render();
     autoTimer = setTimeout(step, 260);
   };
@@ -1389,15 +1454,16 @@ $("undo").onclick = () => {
   const h = history.pop();
   if (!h) return;
   state.bots = h.bots; moves = h.moves; selected = -1;
+  opened = new Set(h.opened || []);
   prevSealed = new Set();
-  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i]) && !opened.has(i)) prevSealed.add(i); });
   render();
 };
 $("reset").onclick = () => { stopAuto(); startLevel(level); };
 $("hint").onclick = () => {
   if (autoTimer) return;
   const btn = $("hint");
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000);
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000, state.totals);
   if (!path || !path.length){
     btn.textContent = T.noWay;
     setTimeout(()=>btn.textContent = T.hint, 1800);
@@ -1413,7 +1479,7 @@ $("auto").onclick = () => {
   if (autoTimer){ stopAuto(); return; }
   ["undo","reset","hint"].forEach(id => $(id).disabled = true);
   selected = -1;
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000);
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
   if (path && path.length){ playPath(path); return; }
   const back = lastSolvable();
   if (!back){
@@ -1427,7 +1493,7 @@ $("auto").onclick = () => {
 /* ---------- уровни ---------- */
 function startLevel(n){
   if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
-  level = n; moves = 0; selected = -1; history = []; prevSealed = new Set();
+  level = n; moves = 0; selected = -1; history = []; prevSealed = new Set(); opened = new Set();
   state = buildLevel(n);
   state.order = state.caps.map((c,i)=>i).filter(i=>!state.chest[i])
                           .sort((a,b)=>state.caps[b]-state.caps[a]);
@@ -1518,6 +1584,7 @@ function applyLang(){
   $("menuLang").textContent = T.language;
   $("aboutMenu").textContent = T.about;
   $("aboutBtn").textContent = T.aboutBtn;
+  $("rulesBtn").textContent = T.rules + ": " + (hardMode ? T.hard : T.soft);
   $("aboutTitle").textContent = docFor(document.documentElement.lang).title;
   $("aboutBody").innerHTML = docFor(document.documentElement.lang).body;
   $("closeAbout").textContent = T.close;
@@ -1550,6 +1617,12 @@ $("amulet").onclick = e => { e.stopPropagation(); openSetup(); };
 $("amulet").onerror = () => { $("amulet").classList.add("hidden"); };
 $("closeSetup").onclick = () => $("setup").classList.remove("on");
 $("aboutBtn").onclick = () => { $("about").classList.add("on"); };
+$("rulesBtn").onclick = () => {
+  hardMode = !hardMode; save.hard = hardMode; writeSave();
+  $("rulesBtn").textContent = T.rules + ": " + (hardMode ? T.hard : T.soft);
+  beep("drop");
+  startLevel(level);                     // правила сменились — ревизия начинается заново
+};
 $("closeAbout").onclick = () => $("about").classList.remove("on");
 function toggleSound(){
   audioOn = !audioOn; save.sound = audioOn; writeSave();
@@ -1607,7 +1680,3 @@ $("menuLang").onclick = openSetup;
   $("splashName").textContent = "HAZNA";
   $("splashTag").textContent = T.sub;
 })();
-
-</script>
-</body>
-</html>

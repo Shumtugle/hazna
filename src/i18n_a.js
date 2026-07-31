@@ -11,6 +11,7 @@ const RTL = ["ar","iw","ur"];
 const L = {};
 
 L.en = {
+  rules:"Rules", hard:"strict", soft:"forgiving",
   aboutBtn:"About",
   sub:"The padishah's audit",
   levelLbl:"audit", movesLbl:"moves",
@@ -31,6 +32,7 @@ L.en = {
 };
 
 L.ru = {
+  rules:"Правила", hard:"строгие", soft:"мягкие",
   aboutBtn:"Об игре",
   sub:"Ревизия ханских ларей",
   levelLbl:"ревизия", movesLbl:"перекладываний",
@@ -51,6 +53,7 @@ L.ru = {
 };
 
 L.de = {
+  rules:"Regeln", hard:"streng", soft:"milde",
   aboutBtn:"Über das Spiel",
   sub:"Die Prüfung des Padischahs",
   levelLbl:"Prüfung", movesLbl:"Züge",
@@ -71,6 +74,7 @@ L.de = {
 };
 
 L.fr = {
+  rules:"Règles", hard:"strictes", soft:"clémentes",
   aboutBtn:"À propos",
   sub:"L'audit du padischah",
   levelLbl:"audit", movesLbl:"coups",
@@ -91,6 +95,7 @@ L.fr = {
 };
 
 L.es = {
+  rules:"Reglas", hard:"estrictas", soft:"indulgentes",
   aboutBtn:"Acerca de",
   sub:"La auditoría del padishah",
   levelLbl:"auditoría", movesLbl:"movimientos",
@@ -111,6 +116,7 @@ L.es = {
 };
 
 L.sv = {
+  rules:"Regler", hard:"stränga", soft:"milda",
   aboutBtn:"Om spelet",
   sub:"Padishahens revision",
   levelLbl:"revision", movesLbl:"drag",
@@ -131,6 +137,7 @@ L.sv = {
 };
 
 L.fi = {
+  rules:"Säännöt", hard:"tiukat", soft:"lempeät",
   aboutBtn:"Tietoja",
   sub:"Padishahin tilintarkastus",
   levelLbl:"tarkastus", movesLbl:"siirtoa",
@@ -151,6 +158,7 @@ L.fi = {
 };
 
 L.uk = {
+  rules:"Правила", hard:"суворі", soft:"м'які",
   aboutBtn:"Про гру",
   sub:"Ревізія ханських скринь",
   levelLbl:"ревізія", movesLbl:"перекладань",

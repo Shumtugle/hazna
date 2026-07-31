@@ -1,4 +1,5 @@
 L.ar = {
+  rules:"القواعد", hard:"صارمة", soft:"متساهلة",
   aboutBtn:"حول اللعبة",
   sub:"تدقيق خزانة الباديشاه",
   levelLbl:"تدقيق", movesLbl:"نقلة",
@@ -19,6 +20,7 @@ L.ar = {
 };
 
 L.iw = {
+  rules:"כללים", hard:"נוקשים", soft:"סלחניים",
   aboutBtn:"אודות",
   sub:"ביקורת אוצר הפאדישאה",
   levelLbl:"ביקורת", movesLbl:"מהלכים",
@@ -39,6 +41,7 @@ L.iw = {
 };
 
 L.ur = {
+  rules:"اصول", hard:"سخت", soft:"نرم",
   aboutBtn:"تعارف",
   sub:"بادشاہ کے خزانے کی جانچ",
   levelLbl:"جانچ", movesLbl:"چالیں",
@@ -59,6 +62,7 @@ L.ur = {
 };
 
 L.kk = {
+  rules:"Ережелер", hard:"қатаң", soft:"жұмсақ",
   aboutBtn:"Ойын туралы",
   sub:"Падишах қазынасының тексерісі",
   levelLbl:"тексеріс", movesLbl:"жүріс",
@@ -79,6 +83,7 @@ L.kk = {
 };
 
 L.ky = {
+  rules:"Эрежелер", hard:"катуу", soft:"жумшак",
   aboutBtn:"Оюн жөнүндө",
   sub:"Падыша казынасынын текшерүүсү",
   levelLbl:"текшерүү", movesLbl:"жүрүш",
@@ -99,6 +104,7 @@ L.ky = {
 };
 
 L.zh = {
+  rules:"规则", hard:"严格", soft:"宽容",
   aboutBtn:"关于",
   sub:"帕迪沙的清点",
   levelLbl:"清点", movesLbl:"步",

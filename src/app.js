@@ -21,7 +21,7 @@ function resolveLang(){
 
 /* ---------- сохранение: только счёт, не расклад ---------- */
 /* В APK окно window.storage отсутствует, работает localStorage. */
-let save = {level:1, sealed:0, total:0, lang:"auto", sound:true};
+let save = {level:1, sealed:0, total:0, lang:"auto", sound:true, hard:true};
 async function loadSave(){
   let raw = null;
   try{
@@ -38,6 +38,7 @@ async function loadSave(){
   }
   langPref = save.lang || "auto";
   audioOn = save.sound !== false;
+  hardMode = save.hard !== false;
   resolveLang();
 }
 async function writeSave(){
@@ -75,3 +76,5 @@ function beep(type){
 /* ---------- состояние партии ---------- */
 let state = null;
 let level = 1, moves = 0, selected = -1, history = [], prevSealed = new Set(), autoTimer = null;
+let opened = new Set();   // мешки, с которых сорвали пломбу (только в мягких правилах)
+let hardMode = true;      // строгие правила: пломба окончательна

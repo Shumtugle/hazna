@@ -50,12 +50,12 @@ function render(){
   const nowSealed = new Set();
   state.order.concat(state.chestOrder).forEach(idx => {
     const b = state.bots[idx], cap = state.caps[idx];
-    const sealed = isSealed(b, cap);
-    if (sealed) nowSealed.add(idx);
+    const shut = isSealed(b, cap) && (hardMode || !opened.has(idx));
+    if (shut) nowSealed.add(idx);
 
     const el = document.createElement("div");
-    el.className = "sack" + (idx===selected ? " sel" : "") + (sealed ? " sealed" : "");
-    if (sealed && !prevSealed.has(idx)) { el.classList.add("sealing"); beep("seal"); }
+    el.className = "sack" + (idx===selected ? " sel" : "") + (shut ? " sealed" : "");
+    if (shut && !prevSealed.has(idx)) { el.classList.add("sealing"); beep("seal"); }
     el.dataset.i = idx;
     el.style.setProperty("--cap", cap);
 
@@ -107,7 +107,8 @@ function doMove(i, j, n){
   const from = sackEl(i), to = sackEl(j);
   if (from && to) flyGem(from, to, gi);
   beep("drop");
-  history.push({bots: state.bots.map(x=>x.slice()), moves});
+  history.push({bots: state.bots.map(x=>x.slice()), moves, opened: Array.from(opened)});
+  opened.delete(i); opened.delete(j);
   applyPour(state.bots, i, j, n);
   moves++; selected = -1;
   render();
@@ -116,7 +117,14 @@ function doMove(i, j, n){
 
 function tap(i){
   if (autoTimer) return;
-  if (isSealed(state.bots[i], state.caps[i])) return;
+  if (isSealed(state.bots[i], state.caps[i]) && (hardMode || !opened.has(i))){
+    if (hardMode) return;                // строгие правила: опечатанный мешок не трогают
+    opened.add(i);                       // мягкие: пломбу сорвали, мешок снова в работе
+    selected = i;
+    beep("back");
+    render();
+    return;
+  }
   if (selected === -1){
     if (!state.bots[i].length) return;
     selected = i; render(); return;
@@ -142,12 +150,12 @@ function stopAuto(){
 function bagsAt(k){ return k < history.length ? history[k].bots : state.bots; }
 function lastSolvable(){
   let lo = 0, hi = history.length, best = null;
-  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000);
+  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
   if (!p0) return null;
   best = {index:0, path:p0};
   while (lo + 1 < hi){
     const mid = (lo + hi) >> 1;
-    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000);
+    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
     if (p){ lo = mid; best = {index:mid, path:p}; } else hi = mid;
   }
   return best;
@@ -171,8 +179,9 @@ function rewindTo(target, then){
     if (history.length <= target){ autoTimer = null; then(); return; }
     const h = history.pop();
     state.bots = h.bots; moves = h.moves; selected = -1;
+    opened = new Set(h.opened || []);
     prevSealed = new Set();
-    state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+    state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i]) && !opened.has(i)) prevSealed.add(i); });
     beep("back"); render();
     autoTimer = setTimeout(step, 260);
   };
@@ -185,15 +194,16 @@ $("undo").onclick = () => {
   const h = history.pop();
   if (!h) return;
   state.bots = h.bots; moves = h.moves; selected = -1;
+  opened = new Set(h.opened || []);
   prevSealed = new Set();
-  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i])) prevSealed.add(i); });
+  state.bots.forEach((b,i)=>{ if (isSealed(b, state.caps[i]) && !opened.has(i)) prevSealed.add(i); });
   render();
 };
 $("reset").onclick = () => { stopAuto(); startLevel(level); };
 $("hint").onclick = () => {
   if (autoTimer) return;
   const btn = $("hint");
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000);
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000, state.totals);
   if (!path || !path.length){
     btn.textContent = T.noWay;
     setTimeout(()=>btn.textContent = T.hint, 1800);
@@ -209,7 +219,7 @@ $("auto").onclick = () => {
   if (autoTimer){ stopAuto(); return; }
   ["undo","reset","hint"].forEach(id => $(id).disabled = true);
   selected = -1;
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000);
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
   if (path && path.length){ playPath(path); return; }
   const back = lastSolvable();
   if (!back){
@@ -223,7 +233,7 @@ $("auto").onclick = () => {
 /* ---------- уровни ---------- */
 function startLevel(n){
   if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
-  level = n; moves = 0; selected = -1; history = []; prevSealed = new Set();
+  level = n; moves = 0; selected = -1; history = []; prevSealed = new Set(); opened = new Set();
   state = buildLevel(n);
   state.order = state.caps.map((c,i)=>i).filter(i=>!state.chest[i])
                           .sort((a,b)=>state.caps[b]-state.caps[a]);
@@ -314,6 +324,7 @@ function applyLang(){
   $("menuLang").textContent = T.language;
   $("aboutMenu").textContent = T.about;
   $("aboutBtn").textContent = T.aboutBtn;
+  $("rulesBtn").textContent = T.rules + ": " + (hardMode ? T.hard : T.soft);
   $("aboutTitle").textContent = docFor(document.documentElement.lang).title;
   $("aboutBody").innerHTML = docFor(document.documentElement.lang).body;
   $("closeAbout").textContent = T.close;
@@ -346,6 +357,12 @@ $("amulet").onclick = e => { e.stopPropagation(); openSetup(); };
 $("amulet").onerror = () => { $("amulet").classList.add("hidden"); };
 $("closeSetup").onclick = () => $("setup").classList.remove("on");
 $("aboutBtn").onclick = () => { $("about").classList.add("on"); };
+$("rulesBtn").onclick = () => {
+  hardMode = !hardMode; save.hard = hardMode; writeSave();
+  $("rulesBtn").textContent = T.rules + ": " + (hardMode ? T.hard : T.soft);
+  beep("drop");
+  startLevel(level);                     // правила сменились — ревизия начинается заново
+};
 $("closeAbout").onclick = () => $("about").classList.remove("on");
 function toggleSound(){
   audioOn = !audioOn; save.sound = audioOn; writeSave();

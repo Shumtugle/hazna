@@ -1,5 +1,5 @@
 /* ---------- подробное описание (как у Meno): разделы, ссылки, версия ---------- */
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 const DOC = {
 
@@ -14,7 +14,12 @@ en: {
 <p>Progress: level, chests sealed and total moves are kept on the device. The board itself is not saved.</p>
 
 <h3>Screens</h3>
-<p>Tap a sack to lift it, tap another to pour. A sealed sack cannot be opened.</p>
+<p>Tap a sack to lift it, tap another to pour. A full sack seals itself.</p>
+
+<h3>Two sets of rules</h3>
+<p><b>Strict</b> (default): a seal is final. A sack closed on the wrong stones stays closed, and a careless move can cost the whole audit. Every deal is still solvable at the start — only your own hand can ruin it.</p>
+<p><b>Forgiving</b>: tap a seal to tear it off and put the sack back to work. Mistakes cost moves, never the audit.</p>
+<p>Switch in settings; the current audit restarts.</p>
 <p>The amulet in the corner opens settings from any screen, splash included.</p>
 <p>Every tenth audit: a remark from the padishah. Every thirtieth: a painting, five seconds, tap to skip.</p>
 
@@ -39,7 +44,12 @@ ru: {
 <p>Прогресс: ревизия, число опечатанных ларей и сумма перекладываний хранятся на устройстве. Сама раскладка не сохраняется.</p>
 
 <h3>Экраны</h3>
-<p>Тап по мешку поднимает его, тап по другому пересыпает. Опечатанный мешок не открывается.</p>
+<p>Тап по мешку поднимает его, тап по другому пересыпает. Полный мешок затягивается сам.</p>
+
+<h3>Двое правил</h3>
+<p><b>Строгие</b> (по умолчанию): пломба окончательна. Мешок, закрытый не на тех камнях, останется закрытым, и один неосторожный ход может стоить всей ревизии. Раздача при этом всегда проходима — испортить её может только твоя рука.</p>
+<p><b>Мягкие</b>: тап по пломбе срывает её и возвращает мешок в работу. Ошибка стоит ходов, но не ревизии.</p>
+<p>Переключается в настройках; текущая ревизия начинается заново.</p>
 <p>Амулет в углу открывает настройки с любого экрана, включая заставку.</p>
 <p>Каждая десятая ревизия — слова падишаха. Каждая тридцатая — картина на пять секунд, тап пропускает.</p>
 

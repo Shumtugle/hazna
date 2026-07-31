@@ -13,6 +13,7 @@ function canPour(bots, caps, i, j, strict){
   if (i===j) return 0;
   const src = bots[i], dst = bots[j];
   if (!src.length) return 0;
+  if (hardMode && isSealed(src, caps[i])) return 0;   // строгие правила: пломба окончательна
   const free = caps[j] - dst.length;
   if (free <= 0) return 0;
   const g = topGroup(src);
@@ -24,7 +25,17 @@ function applyPour(bots, i, j, n){
   const c = bots[i][bots[i].length-1];
   for (let k=0;k<n;k++){ bots[i].pop(); bots[j].push(c); }
 }
-function isSealed(b, cap){ return b.length===cap && b.every(x=>x===b[0]); }
+/* Полный однородный мешок затягивается сам — но эту пломбу можно сорвать тапом.
+   Окончательна лишь та, где собран весь вид целиком: срывать её незачем. */
+function isSealed(b, cap){
+  if (!b.length || b.length !== cap) return false;
+  const c = b[0];
+  for (const x of b) if (x !== c) return false;
+  return true;
+}
+function isFinal(b, cap, totals){
+  return isSealed(b, cap) && (!totals || b.length === totals[b[0]]);
+}
 /* Ревизия закончена только когда каждый непустой мешок полон, однороден и опечатан.
    Ларь на шесть мест опечатать нельзя — он рабочее место, к концу должен быть пуст. */
 function solved(bots, colors, caps){
@@ -77,7 +88,11 @@ function remaining(b){
   return h;
 }
 
-function solve(bots0, caps, colors, nodeLimit){
+let SOLVE_TOTALS = null;
+function totalsFor(c){ return SOLVE_TOTALS ? SOLVE_TOTALS[c] : Infinity; }
+
+function solve(bots0, caps, colors, nodeLimit, totals){
+  SOLVE_TOTALS = totals || null;
   const start = bots0.map(x=>x.slice());
   const heap = new Heap();
   const seen = new Set([key(start, caps)]);
@@ -101,12 +116,19 @@ function solve(bots0, caps, colors, nodeLimit){
       for (let j=0;j<b.length;j++){
         const n = canPour(b, caps, i, j, true);
         if (!n) continue;
+        // при строгих правилах ход, запирающий мешок не на всех камнях вида, — ловушка:
+        // достать оттуда уже нельзя, значит к победе он привести не может
+        if (hardMode && b[j].length + n === caps[j]
+            && b[j].every(x => x === g.color)                 // мешок станет однородным, то есть опечатается
+            && b[j].length + n !== totalsFor(g.color)) continue;   // но вид собран не весь — ловушка
         const m = {i,j,n};
         list.push(m);
         if (b[j].length && n === g.count) merges.push(m);   // горсть уходит к своим целиком
       }
     }
-    const moves = merges.length ? merges : list;
+    // при строгих правилах доминирующее правило теряет полноту: слияние может отрезать
+    // единственный путь, поэтому там перебираем все ходы
+    const moves = (!hardMode && merges.length) ? merges : list;
     for (const m of moves){
       const nb = b.map(x=>x.slice());
       applyPour(nb, m.i, m.j, m.n);
@@ -167,7 +189,11 @@ function unmove(bots, caps){
       to.push(j);
     }
     if (!to.length) continue;
-    const j = to[rnd(0, to.length-1)];
+    // прямой ход пойдёт из j обратно в i: значит после укладки мешок j не должен оказаться
+    // полным и однородным, иначе при строгих правилах он опечатается и путь назад пропадёт
+    const safe = to.filter(j => !(bots[j].length + k === caps[j] && bots[j].every(x => x === g.color)));
+    if (!safe.length) continue;
+    const j = safe[rnd(0, safe.length-1)];
     for (let t=0;t<k;t++){ bots[i].pop(); bots[j].push(g.color); }
     return true;
   }
@@ -188,11 +214,11 @@ function buildLevel(n){
     for (let s=0;s<steps;s++) if (!unmove(bots, caps)) break;
 
     let sealedAtStart = 0;
-    bots.forEach((b,i)=>{ if (b.length && b.length===caps[i] && b.every(x=>x===b[0])) sealedAtStart++; });
+    bots.forEach((b,i)=>{ if (isSealed(b, caps[i])) sealedAtStart++; });
     const mess = remaining(bots) - sealedAtStart*4;
     if (mess > bestMess){ bestMess = mess; best = bots; }
-    if (!sealedAtStart && mess >= colors + 4) return {caps, chest, bots, colors};
+    if (!sealedAtStart && mess >= colors + 4) return {caps, chest, bots, colors, totals:counts.slice()};
   }
-  return {caps, chest, bots: best, colors};
+  return {caps, chest, bots: best, colors, totals:counts.slice()};
 }
 
