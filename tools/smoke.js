@@ -9,6 +9,13 @@ const vm = require('vm');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'play.html'), 'utf8');
+// целостность файла: склейка обязана заканчиваться закрывающими тегами
+for (const tag of ['</script>', '</body>', '</html>']){
+  if (!html.includes(tag)){
+    console.log('✗ файл оборван: нет', tag, '— пересоберите через src/build.sh');
+    process.exit(1);
+  }
+}
 const js = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 
 // id, которые есть в разметке — всё остальное вернёт null, как настоящий браузер

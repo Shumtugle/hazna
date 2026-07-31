@@ -5,6 +5,7 @@ set -e
 cd "$(dirname "$0")"
 
 sh src/build.sh
+node tools/smoke.js || { echo "стенд не прошёл — сборка отменена"; exit 1; }
 
 # ассеты живут в корне репозитория, здесь только копия для упаковки
 rm -rf app/assets && mkdir -p app/assets/art
