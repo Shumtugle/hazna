@@ -148,17 +148,22 @@ function stopAuto(){
   $("undo").disabled = history.length === 0;
 }
 function bagsAt(k){ return k < history.length ? history[k].bots : state.bots; }
-function lastSolvable(){
-  let lo = 0, hi = history.length, best = null;
-  const p0 = solve(bagsAt(0).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
-  if (!p0) return null;
-  best = {index:0, path:p0};
-  while (lo + 1 < hi){
+function probe(k){ return solve(bagsAt(k).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals, 300); }
+
+/* Деление пополам по одной пробе за кадр: между пробами браузер успевает
+   перерисовать экран, поэтому игра не выглядит повисшей. */
+function lastSolvable(done){
+  const p0 = probe(0);
+  if (!p0){ done(null); return; }
+  let lo = 0, hi = history.length, best = {index:0, path:p0};
+  const step = () => {
+    if (lo + 1 >= hi){ autoTimer = null; done(best); return; }
     const mid = (lo + hi) >> 1;
-    const p = solve(bagsAt(mid).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
+    const p = probe(mid);
     if (p){ lo = mid; best = {index:mid, path:p}; } else hi = mid;
-  }
-  return best;
+    autoTimer = setTimeout(step, 0);
+  };
+  autoTimer = setTimeout(step, 0);
 }
 function playPath(path){
   $("auto").textContent = T.stop;
@@ -203,12 +208,14 @@ $("reset").onclick = () => { stopAuto(); startLevel(level); };
 $("hint").onclick = () => {
   if (autoTimer) return;
   const btn = $("hint");
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000, state.totals);
+  btn.textContent = T.thinking;
+  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 40000, state.totals, 700);
   if (!path || !path.length){
     btn.textContent = T.noWay;
     setTimeout(()=>btn.textContent = T.hint, 1800);
     return;
   }
+  btn.textContent = T.hint;
   const [i,j] = path[0];
   sackEl(i).classList.add("sel");
   setTimeout(()=>{ const e=sackEl(j); if(e) e.classList.add("sel"); }, 220);
@@ -219,15 +226,21 @@ $("auto").onclick = () => {
   if (autoTimer){ stopAuto(); return; }
   ["undo","reset","hint"].forEach(id => $(id).disabled = true);
   selected = -1;
-  const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000, state.totals);
-  if (path && path.length){ playPath(path); return; }
-  const back = lastSolvable();
-  if (!back){
-    btn.textContent = T.noWay;
-    setTimeout(stopAuto, 1800);
-    return;
-  }
-  rewindTo(back.index, () => playPath(back.path));
+  btn.textContent = T.thinking;
+  // даём кадру отрисоваться, иначе расчёт съест поток и экран замрёт молча
+  autoTimer = setTimeout(() => {
+    autoTimer = null;
+    const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000, state.totals, 900);
+    if (path && path.length){ playPath(path); return; }
+    lastSolvable(back => {
+      if (!back){
+        btn.textContent = T.noWay;
+        setTimeout(stopAuto, 1800);
+        return;
+      }
+      rewindTo(back.index, () => playPath(back.path));
+    });
+  }, 60);
 };
 
 /* ---------- уровни ---------- */

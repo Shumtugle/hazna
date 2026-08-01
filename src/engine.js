@@ -91,8 +91,11 @@ function remaining(b){
 let SOLVE_TOTALS = null;
 function totalsFor(c){ return SOLVE_TOTALS ? SOLVE_TOTALS[c] : Infinity; }
 
-function solve(bots0, caps, colors, nodeLimit, totals){
+/* msLimit — предел по времени: в тупике поиск доказывает отсутствие решения,
+   обходя всё пространство, и без него интерфейс замирает на секунды. */
+function solve(bots0, caps, colors, nodeLimit, totals, msLimit){
   SOLVE_TOTALS = totals || null;
+  const deadline = Date.now() + (msLimit || 1500);
   const start = bots0.map(x=>x.slice());
   const heap = new Heap();
   const seen = new Set([key(start, caps)]);
@@ -102,6 +105,7 @@ function solve(bots0, caps, colors, nodeLimit, totals){
   while (heap.size()){
     const cur = heap.pop();
     if (++nodes > nodeLimit) return null;
+    if ((nodes & 1023) === 0 && Date.now() > deadline) return null;
     if (solved(cur.b, colors, caps)){
       const path = [];
       let n = cur;
@@ -152,16 +156,30 @@ function shuffle(a){
   return a;
 }
 
+/* Ступень сложности. Растёт раз в три ревизии, упирается в потолок экрана,
+   и уже после обрезки получает передышки: каждая двадцатая ревизия на ступень
+   легче, каждая тридцатая — на две. Откат берётся из обрезанной ступени, а не
+   из растущей базы, иначе на плато передышки исчезли бы навсегда. */
+function difficulty(n, ceiling){
+  const base = (n <= 1) ? 1 : 2 + Math.floor((n - 2) / 3);
+  let step = Math.min(ceiling, base);
+  if (n % 30 === 0) step -= 2;
+  else if (n % 20 === 0) step -= 1;
+  return Math.max(1, step);
+}
+
 function levelPlan(n){
   // на маленьком экране казна беднее — иначе мешки пришлось бы мельчить
   const room = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 700;
-  const ceiling = room >= 780 ? MAX_GEMS : (room >= 660 ? 10 : 8);
-  const base = Math.min(4 + Math.floor((n-1)/2), ceiling);
-  const colors = Math.max(3, Math.min(ceiling, base + [-1,0,0,1][rnd(0,3)]));
+  const roof = room >= 780 ? MAX_GEMS : (room >= 660 ? 10 : 8);
+  const ceiling = roof - 3;                     // ступень 1 — четыре вида, ступень N — N+3
+  const step = difficulty(n, ceiling);
+  const base = Math.min(step + 3, roof);
+  const colors = Math.max(3, Math.min(roof, base + [-1,0,0,1][rnd(0,3)]));
   let lo = 3, hi = 4;
-  if (n >= 5) hi = 5;
-  if (n >= 9) hi = 6;
-  if (n >= 13) lo = 4;
+  if (step >= 3) hi = 5;
+  if (step >= 5) hi = 6;
+  if (step >= 7) lo = 4;
   const counts = [];
   for (let i=0;i<colors;i++) counts.push(rnd(lo, hi));
   shuffle(counts);

@@ -1,5 +1,5 @@
 /* ---------- подробное описание (как у Meno): разделы, ссылки, версия ---------- */
-const VERSION = "1.1.0";
+const VERSION = "1.2.0";
 
 const DOC = {
 
@@ -15,6 +15,9 @@ en: {
 
 <h3>Screens</h3>
 <p>Tap a sack to lift it, tap another to pour. A full sack seals itself.</p>
+
+<h3>The climb</h3>
+<p>Difficulty rises one step every three audits — a new kind of stone, then wider sacks — until it meets what the screen can hold. Every twentieth audit comes one step easier, every thirtieth two: a breath, not a setback. The plateau is reached around the twenty-fifth audit and never lost.</p>
 
 <h3>Two sets of rules</h3>
 <p><b>Strict</b> (default): a seal is final. A sack closed on the wrong stones stays closed, and a careless move can cost the whole audit. Every deal is still solvable at the start — only your own hand can ruin it.</p>
@@ -45,6 +48,9 @@ ru: {
 
 <h3>Экраны</h3>
 <p>Тап по мешку поднимает его, тап по другому пересыпает. Полный мешок затягивается сам.</p>
+
+<h3>Подъём</h3>
+<p>Сложность растёт на ступень каждые три ревизии — новый вид камней, затем более вместительные мешки — пока не упрётся в то, что помещается на экране. Каждая двадцатая ревизия на ступень легче, каждая тридцатая на две: передышка, а не откат. Плато берётся примерно к двадцать пятой ревизии и больше не теряется.</p>
 
 <h3>Двое правил</h3>
 <p><b>Строгие</b> (по умолчанию): пломба окончательна. Мешок, закрытый не на тех камнях, останется закрытым, и один неосторожный ход может стоить всей ревизии. Раздача при этом всегда проходима — испортить её может только твоя рука.</p>
