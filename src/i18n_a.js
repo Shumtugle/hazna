@@ -1,4 +1,3 @@
-/* ---------- языки ---------- */
 const LANGS = [
   {code:"auto", flag:"🌐"}, {code:"en", flag:"🇬🇧"}, {code:"ru", flag:"🇷🇺"},
   {code:"fi", flag:"🇫🇮"}, {code:"es", flag:"🇪🇸"}, {code:"ar", flag:"🇸🇦"},

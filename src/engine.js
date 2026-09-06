@@ -1,5 +1,3 @@
-/* ---------- модель, солвер, генератор ---------- */
-
 function topGroup(b){
   if (!b.length) return null;
   const c = b[b.length-1];
@@ -7,13 +5,12 @@ function topGroup(b){
   for (let i=b.length-2;i>=0 && b[i]===c;i--) n++;
   return {color:c, count:n};
 }
-/* strict=true — правила поиска: солвер не тратит время на переезды с места на место.
-   strict=false — правила игрока: переложить можно всё, что физически влезает. */
+
 function canPour(bots, caps, i, j, strict){
   if (i===j) return 0;
   const src = bots[i], dst = bots[j];
   if (!src.length) return 0;
-  if (hardMode && isSealed(src, caps[i])) return 0;   // строгие правила: пломба окончательна
+  if (hardMode && isSealed(src, caps[i])) return 0;
   const free = caps[j] - dst.length;
   if (free <= 0) return 0;
   const g = topGroup(src);
@@ -25,8 +22,7 @@ function applyPour(bots, i, j, n){
   const c = bots[i][bots[i].length-1];
   for (let k=0;k<n;k++){ bots[i].pop(); bots[j].push(c); }
 }
-/* Полный однородный мешок затягивается сам — но эту пломбу можно сорвать тапом.
-   Окончательна лишь та, где собран весь вид целиком: срывать её незачем. */
+
 function isSealed(b, cap){
   if (!b.length || b.length !== cap) return false;
   const c = b[0];
@@ -36,8 +32,7 @@ function isSealed(b, cap){
 function isFinal(b, cap, totals){
   return isSealed(b, cap) && (!totals || b.length === totals[b[0]]);
 }
-/* Ревизия закончена только когда каждый непустой мешок полон, однороден и опечатан.
-   Ларь на шесть мест опечатать нельзя — он рабочее место, к концу должен быть пуст. */
+
 function solved(bots, colors, caps){
   const used = new Set();
   for (let i=0;i<bots.length;i++){
@@ -53,9 +48,6 @@ function solved(bots, colors, caps){
 }
 function key(bots, caps){ return bots.map((b,i)=>caps[i]+":"+b.join(",")).sort().join("|"); }
 
-/* ---------- солвер ---------- */
-/* Поиск по приоритету: сначала разбираются позиции, до порядка которым ближе.
-   Оценка остатка — число разрывов в мешках плюс раскиданность видов. */
 function Heap(){ this.a = []; }
 Heap.prototype.push = function(x){
   const a=this.a; a.push(x); let i=a.length-1;
@@ -91,8 +83,6 @@ function remaining(b){
 let SOLVE_TOTALS = null;
 function totalsFor(c){ return SOLVE_TOTALS ? SOLVE_TOTALS[c] : Infinity; }
 
-/* msLimit — предел по времени: в тупике поиск доказывает отсутствие решения,
-   обходя всё пространство, и без него интерфейс замирает на секунды. */
 function solve(bots0, caps, colors, nodeLimit, totals, msLimit){
   SOLVE_TOTALS = totals || null;
   const deadline = Date.now() + (msLimit || 1500);
@@ -120,18 +110,16 @@ function solve(bots0, caps, colors, nodeLimit, totals, msLimit){
       for (let j=0;j<b.length;j++){
         const n = canPour(b, caps, i, j, true);
         if (!n) continue;
-        // при строгих правилах ход, запирающий мешок не на всех камнях вида, — ловушка:
-        // достать оттуда уже нельзя, значит к победе он привести не может
+
         if (hardMode && b[j].length + n === caps[j]
-            && b[j].every(x => x === g.color)                 // мешок станет однородным, то есть опечатается
-            && b[j].length + n !== totalsFor(g.color)) continue;   // но вид собран не весь — ловушка
+            && b[j].every(x => x === g.color)
+            && b[j].length + n !== totalsFor(g.color)) continue;
         const m = {i,j,n};
         list.push(m);
-        if (b[j].length && n === g.count) merges.push(m);   // горсть уходит к своим целиком
+        if (b[j].length && n === g.count) merges.push(m);
       }
     }
-    // при строгих правилах доминирующее правило теряет полноту: слияние может отрезать
-    // единственный путь, поэтому там перебираем все ходы
+
     const moves = (!hardMode && merges.length) ? merges : list;
     for (const m of moves){
       const nb = b.map(x=>x.slice());
@@ -145,21 +133,12 @@ function solve(bots0, caps, colors, nodeLimit, totals, msLimit){
   return null;
 }
 
-/* ---------- генератор ---------- */
-/* Добыча и тара считаются вместе: сколько камней вида, столько мест в его мешке.
-   Ларь на одно место больше самого крупного мешка — опечатать его нельзя никогда.
-   Раздача строится обратным ходом из опечатанной казны: каждый шаг обратим,
-   значит путь назад существует всегда. Солвер при раздаче не нужен. */
 function rnd(lo, hi){ return lo + Math.floor(Math.random()*(hi-lo+1)); }
 function shuffle(a){
   for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
   return a;
 }
 
-/* Ступень сложности. Растёт раз в три ревизии, упирается в потолок экрана,
-   и уже после обрезки получает передышки: каждая двадцатая ревизия на ступень
-   легче, каждая тридцатая — на две. Откат берётся из обрезанной ступени, а не
-   из растущей базы, иначе на плато передышки исчезли бы навсегда. */
 function difficulty(n, ceiling){
   const base = (n <= 1) ? 1 : 2 + Math.floor((n - 2) / 3);
   let step = Math.min(ceiling, base);
@@ -169,10 +148,10 @@ function difficulty(n, ceiling){
 }
 
 function levelPlan(n){
-  // на маленьком экране казна беднее — иначе мешки пришлось бы мельчить
+
   const room = (typeof window !== "undefined" && window.innerHeight) ? window.innerHeight : 700;
   const roof = room >= 780 ? MAX_GEMS : (room >= 660 ? 10 : 8);
-  const ceiling = roof - 3;                     // ступень 1 — четыре вида, ступень N — N+3
+  const ceiling = roof - 3;
   const step = difficulty(n, ceiling);
   const base = Math.min(step + 3, roof);
   const colors = Math.max(3, Math.min(roof, base + [-1,0,0,1][rnd(0,3)]));
@@ -188,27 +167,24 @@ function levelPlan(n){
   return {colors, counts, chestCap, chestN};
 }
 
-/* один обратный шаг: снять k верхних камней одного вида и положить туда,
-   откуда прямой ход вернёт ровно их же */
 function unmove(bots, caps){
   const from = [];
   for (let i=0;i<bots.length;i++) if (bots[i].length) from.push(i);
   shuffle(from);
   for (const i of from){
     const g = topGroup(bots[i]);
-    const maxK = (g.count === bots[i].length) ? g.count : g.count - 1;  // либо опустошаем, либо оставляем свой вид сверху
+    const maxK = (g.count === bots[i].length) ? g.count : g.count - 1;
     if (maxK < 1) continue;
     const k = rnd(1, maxK);
     const to = [];
     for (let j=0;j<bots.length;j++){
       if (j === i) continue;
       if (caps[j] - bots[j].length < k) continue;
-      if (bots[j].length && bots[j][bots[j].length-1] === g.color) continue;  // иначе горсти слипнутся
+      if (bots[j].length && bots[j][bots[j].length-1] === g.color) continue;
       to.push(j);
     }
     if (!to.length) continue;
-    // прямой ход пойдёт из j обратно в i: значит после укладки мешок j не должен оказаться
-    // полным и однородным, иначе при строгих правилах он опечатается и путь назад пропадёт
+
     const safe = to.filter(j => !(bots[j].length + k === caps[j] && bots[j].every(x => x === g.color)));
     if (!safe.length) continue;
     const j = safe[rnd(0, safe.length-1)];

@@ -1,4 +1,3 @@
-/* ---------- отрисовка ---------- */
 const shelf = document.getElementById("shelf");
 const chests = document.getElementById("chests");
 const $ = id => document.getElementById(id);
@@ -99,7 +98,6 @@ function flyGem(fromEl, toEl, gi){
   ).onfinish = () => d.remove();
 }
 
-/* ---------- ход ---------- */
 function sackEl(i){ return document.querySelector('.sack[data-i="'+i+'"]'); }
 
 function doMove(i, j, n){
@@ -118,8 +116,8 @@ function doMove(i, j, n){
 function tap(i){
   if (autoTimer) return;
   if (isSealed(state.bots[i], state.caps[i]) && (hardMode || !opened.has(i))){
-    if (hardMode) return;                // строгие правила: опечатанный мешок не трогают
-    opened.add(i);                       // мягкие: пломбу сорвали, мешок снова в работе
+    if (hardMode) return;
+    opened.add(i);
     selected = i;
     beep("back");
     render();
@@ -140,7 +138,6 @@ document.addEventListener("click", e => {
   if (el) tap(parseInt(el.dataset.i, 10));
 });
 
-/* ---------- разбор за игрока ---------- */
 function stopAuto(){
   if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
   $("auto").textContent = T.solve;
@@ -150,8 +147,6 @@ function stopAuto(){
 function bagsAt(k){ return k < history.length ? history[k].bots : state.bots; }
 function probe(k){ return solve(bagsAt(k).map(x=>x.slice()), state.caps, state.colors, 60000, state.totals, 300); }
 
-/* Деление пополам по одной пробе за кадр: между пробами браузер успевает
-   перерисовать экран, поэтому игра не выглядит повисшей. */
 function lastSolvable(done){
   const p0 = probe(0);
   if (!p0){ done(null); return; }
@@ -193,7 +188,6 @@ function rewindTo(target, then){
   autoTimer = setTimeout(step, 140);
 }
 
-/* ---------- кнопки ---------- */
 $("undo").onclick = () => {
   if (autoTimer) return;
   const h = history.pop();
@@ -227,7 +221,7 @@ $("auto").onclick = () => {
   ["undo","reset","hint"].forEach(id => $(id).disabled = true);
   selected = -1;
   btn.textContent = T.thinking;
-  // даём кадру отрисоваться, иначе расчёт съест поток и экран замрёт молча
+
   autoTimer = setTimeout(() => {
     autoTimer = null;
     const path = solve(state.bots.map(x=>x.slice()), state.caps, state.colors, 60000, state.totals, 900);
@@ -243,7 +237,6 @@ $("auto").onclick = () => {
   }, 60);
 };
 
-/* ---------- уровни ---------- */
 function startLevel(n){
   if (autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
   level = n; moves = 0; selected = -1; history = []; prevSealed = new Set(); opened = new Set();
@@ -270,9 +263,8 @@ function win(){
   save.total = (save.total || 0) + moves;
   writeSave();
 }
-const ART_COUNT = 10;                 // рисунки лежат в art/01.jpg … art/10.jpg
-/* Колода: за десять заставок каждая картина выпадет ровно раз, порядок случайный,
-   и подряд одна и та же не повторяется. */
+const ART_COUNT = 10;
+
 let artDeck = [];
 function nextArt(){
   if (!artDeck.length){
@@ -302,7 +294,7 @@ function showArt(then){
     box.onclick = null;
     then();
   };
-  img.onerror = () => { img.onerror = null; finish(); };   // нет файла — идём дальше без паузы
+  img.onerror = () => { img.onerror = null; finish(); };
   img.src = "art/" + (n < 10 ? "0" + n : n) + ".jpg";
   box.classList.add("on");
   box.onclick = finish;
@@ -316,7 +308,6 @@ $("next").onclick = () => {
 };
 window.addEventListener("resize", () => { if (state){ fitSizes(); render(); } });
 
-/* ---------- надписи ---------- */
 function applyLang(){
   resolveLang();
   document.documentElement.dir = RTL.indexOf(document.documentElement.lang) >= 0 ? "rtl" : "ltr";
@@ -350,7 +341,6 @@ function applyLang(){
   $("next").textContent = T.next;
 }
 
-/* ---------- настройки ---------- */
 function buildFlags(){
   const box = $("flags");
   box.innerHTML = "";
@@ -374,7 +364,7 @@ $("rulesBtn").onclick = () => {
   hardMode = !hardMode; save.hard = hardMode; writeSave();
   $("rulesBtn").textContent = T.rules + ": " + (hardMode ? T.hard : T.soft);
   beep("drop");
-  startLevel(level);                     // правила сменились — ревизия начинается заново
+  startLevel(level);
 };
 $("closeAbout").onclick = () => $("about").classList.remove("on");
 function toggleSound(){
@@ -406,7 +396,6 @@ $("freshBtn").onclick = () => armFresh($("freshBtn"));
 $("menuFresh").onclick = () => armFresh($("menuFresh"));
 $("menuLang").onclick = openSetup;
 
-/* ---------- запуск ---------- */
 (async function boot(){
   const splash = $("splash");
   let shown = false;
@@ -419,7 +408,7 @@ $("menuLang").onclick = openSetup;
   };
   splash.onclick = leaveSplash;
   $("splashImg").onerror = leaveSplash;
-  setTimeout(leaveSplash, 5000);          // ставим до всего прочего: заставка уйдёт в любом случае
+  setTimeout(leaveSplash, 5000);
 
   await loadSave();
   applyLang();

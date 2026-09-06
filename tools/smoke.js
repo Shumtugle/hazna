@@ -1,24 +1,18 @@
-/* Стенд: собирает игру, подсовывает ей поддельный DOM и по-настоящему играет.
-   Ловит то, что не видит проверка синтаксиса: обращения к несуществующим элементам,
-   необъявленные переменные, падения при отрисовке.
-   Запуск:  node tools/smoke.js  */
-
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'play.html'), 'utf8');
-// целостность файла: склейка обязана заканчиваться закрывающими тегами
+
 for (const tag of ['</script>', '</body>', '</html>']){
   if (!html.includes(tag)){
-    console.log('✗ файл оборван: нет', tag, '— пересоберите через src/build.sh');
+    console.log('x truncated file: missing', tag, '- rebuild with src/build.sh');
     process.exit(1);
   }
 }
 const js = html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>'));
 
-// id, которые есть в разметке — всё остальное вернёт null, как настоящий браузер
 const markup = html.slice(0, html.indexOf('<script>'));
 const KNOWN = new Set([...markup.matchAll(/id="([^"]+)"/g)].map(m => m[1]));
 
@@ -66,10 +60,9 @@ sandbox.window.document = sandbox.document;
 sandbox.globalThis = sandbox;
 
 const ctx = vm.createContext(sandbox);
-// let-переменные не попадают в глобальный объект — открываем к ним доступ явно
+
 vm.runInContext(js + '\nglobalThis.__peek = () => ({state, opened, history, level, moves, hardMode});\nglobalThis.__setHard = (v) => { hardMode = v; };', ctx, { filename:'play.html' });
 
-// запуск: прогоняем отложенные вызовы, как это сделал бы браузер
 let guard = 0;
 while (timers.length && guard++ < 200) timers.shift().fn();
 
@@ -79,18 +72,18 @@ function check(name, fn){
   catch (e){ fail.push(name); console.log('  ✗', name, '—', e.message); }
 }
 
-console.log('Запуск и отрисовка:');
-check('уровень строится и рисуется', () => ctx.startLevel(1));
-check('перерисовка после хода', () => { ctx.render(); });
-check('размеры считаются', () => ctx.fitSizes());
-check('смена языка', () => { ctx.langPref = 'ar'; ctx.applyLang(); ctx.langPref = 'ru'; ctx.applyLang(); });
-check('настройки открываются', () => ctx.openSetup());
-check('флаги строятся', () => ctx.buildFlags());
+console.log('Boot and render:');
+check('level builds and draws', () => ctx.startLevel(1));
+check('redraw after a move', () => { ctx.render(); });
+check('sizes are computed', () => ctx.fitSizes());
+check('language switch', () => { ctx.langPref = 'ar'; ctx.applyLang(); ctx.langPref = 'ru'; ctx.applyLang(); });
+check('settings open', () => ctx.openSetup());
+check('flags build', () => ctx.buildFlags());
 
 for (const hard of [true, false]){
-console.log('\nИгра сотней случайных ходов на десяти ревизиях, правила ' + (hard ? 'строгие' : 'мягкие') + ':');
+console.log('\nHundred random moves over ten audits, ' + (hard ? 'strict' : 'forgiving') + ' rules:');
 ctx.__setHard(hard);
-check('ходы, пломбы, откат', () => {
+check('moves, seals, undo', () => {
   for (let lvl = 1; lvl <= 10; lvl++){
     ctx.startLevel(lvl);
     for (let step = 0; step < 100; step++){
@@ -104,15 +97,15 @@ check('ходы, пломбы, откат', () => {
       if (!opts.length) break;
       const [i, j, n] = opts[Math.floor(Math.random() * opts.length)];
       ctx.doMove(i, j, n);
-      if (step % 7 === 0) ctx.tap(i);        // тапаем — в том числе по опечатанным
+      if (step % 7 === 0) ctx.tap(i);
     }
   }
 });
 }
 
 const peek = ctx.__peek();
-console.log('\nСостояние после игры: ревизия', peek.level, '· ходов', peek.moves,
-            '· сорванных пломб', peek.opened.size, '· в истории', peek.history.length,
-            '· правила', peek.hardMode ? 'строгие' : 'мягкие');
-console.log('\nВывод:', fail.length ? ('ПАДЕНИЙ ' + fail.length + ': ' + fail.join(', ')) : 'всё живо');
+console.log('\nState after play: audit', peek.level, '\u00b7 moves', peek.moves,
+            '\u00b7 seals torn', peek.opened.size, '\u00b7 history', peek.history.length,
+            '\u00b7 rules', peek.hardMode ? 'strict' : 'forgiving');
+console.log('\nResult:', fail.length ? ('FAILURES ' + fail.length + ': ' + fail.join(', ')) : 'all alive');
 process.exit(fail.length ? 1 : 0);

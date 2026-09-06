@@ -2,12 +2,8 @@
 .super Landroid/webkit/WebViewClient;
 .source "Links.java"
 
-
-# instance fields
 .field private ctx:Landroid/content/Context;
 
-
-# direct methods
 .method public constructor <init>(Landroid/content/Context;)V
     .locals 0
 
@@ -18,12 +14,9 @@
     return-void
 .end method
 
-
-# virtual methods
 .method public shouldOverrideUrlLoading(Landroid/webkit/WebView;Ljava/lang/String;)Z
     .locals 5
 
-    # ссылки на claude.ai и github уходят наружу, всё остальное грузится внутри
     const-string v0, "http"
 
     invoke-virtual {p2, v0}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z

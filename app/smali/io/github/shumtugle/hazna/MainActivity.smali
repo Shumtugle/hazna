@@ -2,51 +2,39 @@
 .super Landroid/app/Activity;
 .source "MainActivity.java"
 
-
-# instance fields
 .field private web:Landroid/webkit/WebView;
 
-
-# direct methods
 .method public constructor <init>()V
     .locals 0
     invoke-direct {p0}, Landroid/app/Activity;-><init>()V
     return-void
 .end method
 
-
-# virtual methods
 .method protected onCreate(Landroid/os/Bundle;)V
     .locals 5
 
     invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
 
-    # WebView web = new WebView(this);
     new-instance v0, Landroid/webkit/WebView;
     invoke-direct {v0, p0}, Landroid/webkit/WebView;-><init>(Landroid/content/Context;)V
     iput-object v0, p0, Lio/github/shumtugle/hazna/MainActivity;->web:Landroid/webkit/WebView;
 
-    # WebSettings s = web.getSettings();
     invoke-virtual {v0}, Landroid/webkit/WebView;->getSettings()Landroid/webkit/WebSettings;
     move-result-object v1
 
     const/4 v2, 0x1
 
-    # JavaScript и локальное хранилище: в нём лежит прогресс
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setJavaScriptEnabled(Z)V
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setDomStorageEnabled(Z)V
     invoke-virtual {v1, v2}, Landroid/webkit/WebSettings;->setDatabaseEnabled(Z)V
 
-    # звук без предварительного касания
     const/4 v3, 0x0
     invoke-virtual {v1, v3}, Landroid/webkit/WebSettings;->setMediaPlaybackRequiresUserGesture(Z)V
 
-    # ссылки наружу открывает браузер
     new-instance v4, Lio/github/shumtugle/hazna/Links;
     invoke-direct {v4, p0}, Lio/github/shumtugle/hazna/Links;-><init>(Landroid/content/Context;)V
     invoke-virtual {v0, v4}, Landroid/webkit/WebView;->setWebViewClient(Landroid/webkit/WebViewClient;)V
 
-    # беж под содержимым, чтобы при старте не мигало белым
     const v3, -0x1c2a48
     invoke-virtual {v0, v3}, Landroid/webkit/WebView;->setBackgroundColor(I)V
 

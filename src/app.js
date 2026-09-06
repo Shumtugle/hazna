@@ -1,4 +1,3 @@
-/* ---------- камни: цвет + огранка ---------- */
 const GEMS = [
   {c:"#C62348", g:0}, {c:"#1E8F63", g:4}, {c:"#2A55B8", g:9}, {c:"#E9A81C", g:1},
   {c:"#7B3FB8", g:3}, {c:"#35A8C4", g:2}, {c:"#33313F", g:8}, {c:"#EDE4D0", g:5},
@@ -6,7 +5,6 @@ const GEMS = [
 ];
 const MAX_GEMS = GEMS.length;
 
-/* ---------- язык ---------- */
 let langPref = "auto", T = L.en, PADISHAH = PADISHAH_EN;
 function resolveLang(){
   let code = langPref;
@@ -15,12 +13,10 @@ function resolveLang(){
     code = L[sys] ? sys : "en";
   }
   T = L[code] || L.en;
-  PADISHAH = (code === "ru") ? PADISHAH_RU : PADISHAH_EN;   // реплики пока на двух языках
+  PADISHAH = (code === "ru") ? PADISHAH_RU : PADISHAH_EN;
   document.documentElement.lang = code;
 }
 
-/* ---------- сохранение: только счёт, не расклад ---------- */
-/* В APK окно window.storage отсутствует, работает localStorage. */
 let save = {level:1, sealed:0, total:0, lang:"auto", sound:true, hard:true};
 async function loadSave(){
   let raw = null;
@@ -47,7 +43,6 @@ async function writeSave(){
   try{ if (window.storage) await window.storage.set("purrsia", raw); }catch(e){}
 }
 
-/* ---------- звук ---------- */
 let audioOn = true, actx = null;
 function beep(type){
   if (!audioOn) return;
@@ -73,8 +68,7 @@ function beep(type){
   }catch(e){}
 }
 
-/* ---------- состояние партии ---------- */
 let state = null;
 let level = 1, moves = 0, selected = -1, history = [], prevSealed = new Set(), autoTimer = null;
-let opened = new Set();   // мешки, с которых сорвали пломбу (только в мягких правилах)
-let hardMode = true;      // строгие правила: пломба окончательна
+let opened = new Set();
+let hardMode = true;
