@@ -1,0 +1,9 @@
+# signing material never enters the repository
+*.keystore
+*.jks
+key/
+*.idsig
+# build output
+build/
+out/
+*.part
